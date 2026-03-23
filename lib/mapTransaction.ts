@@ -14,6 +14,7 @@ export type TransactionRowDb = {
   payment_method_id: string | null;
   payment_methods: { id: string; name: string } | null;
   created_at: string;
+  notes?: string | null;
 };
 
 export async function mapRowsToTransactions(
@@ -52,6 +53,7 @@ async function mapRowToTransaction(
     paymentMethodId: row.payment_method_id,
     paymentMethodName: row.payment_methods?.name ?? null,
     createdAt: row.created_at,
+    notes: row.notes ?? null,
   };
 }
 

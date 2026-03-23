@@ -6,44 +6,42 @@ import { usePathname } from "next/navigation";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/categorizer", label: "Categorizer" },
-  { href: "/transactions", label: "Receipt gallery" },
+  { href: "/uncategorized", label: "Uncategorized" },
+  { href: "/transactions", label: "Receipts" },
   { href: "/reports", label: "Reports" },
 ] as const;
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { signedIn, userEmail, signOut, configMissing } = useTransactions();
+  const { signedIn, signOut, configMissing } = useTransactions();
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50 print:hidden dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="border-b border-zinc-200 px-5 py-6 dark:border-zinc-800">
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-          Expense tracker
-        </p>
-        <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+    <header className="fixed top-3 left-3 right-3 z-[100] mx-auto flex max-w-5xl flex-col gap-3 rounded-[1.5rem] border border-white/60 bg-white/40 px-3 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-xl transition-all dark:border-white/10 dark:bg-zinc-900/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] md:top-6 md:left-6 md:right-6 md:flex-row md:items-center md:justify-between md:rounded-[2rem] md:px-6 md:py-3">
+      
+      {/* Top Row: Brand & Auth */}
+      <div className="flex items-center justify-between md:w-1/4">
+        <span className="ml-1 text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
           Receipts
-        </p>
-        {!configMissing && signedIn && userEmail ? (
-          <p className="mt-2 truncate text-xs text-zinc-500" title={userEmail}>
-            {userEmail}
-          </p>
-        ) : null}
+        </span>
+        
+        {/* Mobile Auth (Hidden on Desktop) */}
+        <div className="md:hidden">
+          <AuthButton signedIn={signedIn} configMissing={configMissing} signOut={signOut} />
+        </div>
       </div>
-      <nav className="flex flex-1 flex-col gap-0.5 p-3" aria-label="Main">
-        {nav.map((item) => {
-          const active =
-            pathname === item.href ||
-            pathname.startsWith(`${item.href}/`);
 
+      {/* Navigation Pills */}
+      <nav className="flex items-center justify-between gap-1 overflow-x-auto rounded-xl bg-white/40 p-1 shadow-inner dark:bg-black/30 md:justify-center md:rounded-full">
+        {nav.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-xs font-semibold transition-all md:rounded-full md:px-4 md:text-sm ${
                 active
-                  ? "bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-50 dark:ring-zinc-700"
-                  : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
+                  : "text-zinc-600 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100"
               }`}
             >
               {item.label}
@@ -51,28 +49,28 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
-        {!configMissing && signedIn ? (
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-          >
-            Sign out
-          </button>
-        ) : !configMissing ? (
-          <Link
-            href="/login"
-            className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-          >
-            Sign in
-          </Link>
-        ) : (
-          <p className="px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-            Set Supabase env in .env.local
-          </p>
-        )}
+
+      {/* Desktop Auth (Hidden on Mobile) */}
+      <div className="hidden justify-end md:flex md:w-1/4">
+        <AuthButton signedIn={signedIn} configMissing={configMissing} signOut={signOut} />
       </div>
-    </aside>
+
+    </header>
+  );
+}
+
+function AuthButton({ signedIn, configMissing, signOut }: any) {
+  if (configMissing) return <span className="text-xs font-medium text-amber-600 dark:text-amber-400">No Env</span>;
+  if (signedIn) {
+    return (
+      <button onClick={() => void signOut()} className="rounded-full bg-zinc-900/5 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-900/10 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/20">
+        Sign out
+      </button>
+    );
+  }
+  return (
+    <Link href="/login" className="rounded-full bg-zinc-900/5 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-900/10 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/20">
+      Sign in
+    </Link>
   );
 }

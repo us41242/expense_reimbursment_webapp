@@ -3,7 +3,7 @@
 import { useTransactions } from "@/context/TransactionContext";
 import type { Transaction } from "@/lib/types";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -16,61 +16,67 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
-function Toggle({
-  label,
-  pressed,
-  onToggle,
-}: {
-  label: string;
-  pressed: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={pressed}
-      aria-label={label}
-      onClick={onToggle}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-        pressed
-          ? "bg-emerald-600 dark:bg-emerald-500"
-          : "bg-zinc-300 dark:bg-zinc-600"
-      }`}
-    >
-      <span
-        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${
-          pressed ? "left-6" : "left-1"
-        }`}
-      />
-    </button>
-  );
-}
-
 export function ReportsClient() {
   const {
     hydrated,
     configMissing,
     signedIn,
     transactions,
-    setReimbursementBilled,
-    setReimbursementPaid,
+    batchUpdateReimbursements,
   } = useTransactions();
 
-  const unpaidReimbursable = useMemo(
+  const [activeTab, setActiveTab] = useState<"unbilled" | "billed" | "paid">("unbilled");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const unbilledTxs = useMemo(
     () =>
       transactions.filter(
-        (t) =>
-          t.category === "reimbursable" &&
-          !t.reimbursementPaid,
+        (t) => t.category === "reimbursable" && !t.reimbursementBilled && !t.reimbursementPaid
       ),
     [transactions],
   );
 
+  const billedTxs = useMemo(
+    () =>
+      transactions.filter(
+        (t) => t.category === "reimbursable" && t.reimbursementBilled && !t.reimbursementPaid
+      ),
+    [transactions],
+  );
+
+  const paidTxs = useMemo(
+    () =>
+      transactions.filter(
+        (t) => t.category === "reimbursable" && t.reimbursementPaid
+      ),
+    [transactions],
+  );
+
+  const activeTxs =
+    activeTab === "unbilled"
+      ? unbilledTxs
+      : activeTab === "billed"
+      ? billedTxs
+      : paidTxs;
+
+  const handleBatchBilled = async () => {
+    if (unbilledTxs.length === 0) return;
+    setIsSubmitting(true);
+    const ids = unbilledTxs.map((t) => t.id);
+    await batchUpdateReimbursements(ids, { reimbursement_billed: true });
+    setIsSubmitting(false);
+  };
+
+  const handleBatchPaid = async () => {
+    if (billedTxs.length === 0) return;
+    setIsSubmitting(true);
+    const ids = billedTxs.map((t) => t.id);
+    await batchUpdateReimbursements(ids, { reimbursement_paid: true });
+    setIsSubmitting(false);
+  };
+
   if (!hydrated) {
-    return (
-      <p className="text-sm text-zinc-500">Loading…</p>
-    );
+    return <p className="text-sm text-zinc-500">Loading…</p>;
   }
 
   if (configMissing) {
@@ -91,138 +97,139 @@ export function ReportsClient() {
 
   return (
     <div className="space-y-6">
-      <div className="no-print flex flex-wrap items-center justify-between gap-4">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Reimbursable expenses that are not marked paid. Mark as billed when you submit them;
-          mark as paid when reimbursed.
-        </p>
+      <div className="no-print flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div className="flex w-full overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900/60 md:w-auto">
+          <button
+            onClick={() => setActiveTab("unbilled")}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+              activeTab === "unbilled"
+                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+          >
+            Unbilled ({unbilledTxs.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("billed")}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+              activeTab === "billed"
+                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+          >
+            Billed ({billedTxs.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("paid")}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+              activeTab === "paid"
+                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+          >
+            Paid ({paidTxs.length})
+          </button>
+        </div>
+
         <Link
           href="/reports/export"
-          className="inline-flex items-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+          className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:focus:ring-offset-zinc-900"
         >
-          Export report
+          Export current view
         </Link>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60">
-            <tr>
-              <th scope="col" className="px-4 py-3">
-                Date
-              </th>
-              <th scope="col" className="px-4 py-3">
-                Description
-              </th>
-              <th scope="col" className="px-4 py-3 text-right">
-                Amount
-              </th>
-              <th scope="col" className="px-4 py-3">
-                Receipt
-              </th>
-              <th scope="col" className="px-4 py-3 text-center">
-                Billed
-              </th>
-              <th scope="col" className="px-4 py-3 text-center">
-                Paid
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {unpaidReimbursable.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-12 text-center text-zinc-500"
-                >
-                  No unpaid reimbursable items. Categorize transactions as Reimbursable or
-                  mark existing ones as paid on the transaction detail page.
-                </td>
-              </tr>
-            ) : (
-              unpaidReimbursable.map((t) => (
-                <ReportRow
-                  key={t.id}
-                  tx={t}
-                  onBilled={() =>
-                    void setReimbursementBilled(t.id, !t.reimbursementBilled)
-                  }
-                  onPaid={() =>
-                    void setReimbursementPaid(t.id, !t.reimbursementPaid)
-                  }
-                />
-              ))
-            )}
-          </tbody>
-        </table>
+        <div className="flex flex-col">
+          {activeTxs.length === 0 ? (
+            <div className="px-4 py-12 text-center text-zinc-500">
+              No items in this tab.
+            </div>
+          ) : (
+            activeTxs.map((t) => <ReportRow key={t.id} tx={t} />)
+          )}
+        </div>
+
+        {/* Action Bar */}
+        {activeTab === "unbilled" && activeTxs.length > 0 && (
+          <div className="no-print flex items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              {activeTxs.length} item{activeTxs.length === 1 ? "" : "s"} ready to bill
+            </span>
+            <button
+              onClick={() => void handleBatchBilled()}
+              disabled={isSubmitting}
+              className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
+            >
+              {isSubmitting ? "Updating..." : "Mark all as Billed"}
+            </button>
+          </div>
+        )}
+
+        {activeTab === "billed" && activeTxs.length > 0 && (
+          <div className="no-print flex items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Waiting for reimbursement on {activeTxs.length} item{activeTxs.length === 1 ? "" : "s"}
+            </span>
+            <button
+              onClick={() => void handleBatchPaid()}
+              disabled={isSubmitting}
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:text-blue-950 dark:hover:bg-blue-400"
+            >
+              {isSubmitting ? "Updating..." : "Mark all as Paid"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function ReportRow({
-  tx,
-  onBilled,
-  onPaid,
-}: {
-  tx: Transaction;
-  onBilled: () => void;
-  onPaid: () => void;
-}) {
+function ReportRow({ tx }: { tx: Transaction }) {
   const d = new Date(tx.date + "T12:00:00");
 
   return (
-    <tr className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
-      <td className="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-300">
-        {dateFmt.format(d)}
-      </td>
-      <td className="max-w-[200px] px-4 py-3">
-        <Link
-          href={`/transactions/${tx.id}`}
-          className="font-medium text-zinc-900 underline-offset-2 hover:underline dark:text-zinc-50"
-        >
-          {tx.merchant}
-        </Link>
-      </td>
-      <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-zinc-900 dark:text-zinc-50">
-        {money.format(tx.amount)}
-      </td>
-      <td className="px-4 py-2">
-        {tx.receiptImageUrl ? (
+    <div className="flex flex-col gap-3 border-b border-zinc-200 bg-white p-4 transition-colors last:border-0 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/20 dark:hover:bg-zinc-900/40 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <div className="flex items-center gap-4">
+        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+          {tx.receiptImageUrl ? (
+            <Link href={`/transactions/${tx.id}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={tx.receiptImageUrl}
+                alt="Receipt"
+                className="h-full w-full object-cover transition hover:opacity-80"
+              />
+            </Link>
+          ) : (
+            <Link
+              href={`/transactions/${tx.id}`}
+              className="flex h-full w-full items-center justify-center text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+            >
+              Add
+            </Link>
+          )}
+        </div>
+        
+        <div className="flex flex-col">
           <Link
             href={`/transactions/${tx.id}`}
-            className="inline-block overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-600"
+            className="text-[15px] font-bold tracking-tight text-zinc-900 underline-offset-2 hover:underline dark:text-zinc-50"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={tx.receiptImageUrl}
-              alt=""
-              className="h-12 w-12 object-cover"
-            />
+            {tx.merchant}
           </Link>
-        ) : (
-          <Link
-            href={`/transactions/${tx.id}`}
-            className="text-xs font-medium text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline dark:hover:text-zinc-300"
-          >
-            Add receipt
-          </Link>
-        )}
-      </td>
-      <td className="px-4 py-2 text-center">
-        <Toggle
-          label="Mark as billed"
-          pressed={tx.reimbursementBilled}
-          onToggle={onBilled}
-        />
-      </td>
-      <td className="px-4 py-2 text-center">
-        <Toggle
-          label="Mark as paid"
-          pressed={tx.reimbursementPaid}
-          onToggle={onPaid}
-        />
-      </td>
-    </tr>
+          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+            {dateFmt.format(d)}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800 sm:border-0 sm:pt-0">
+        <span className="text-sm font-medium text-zinc-500 sm:hidden">Amount</span>
+        <span className="text-lg font-bold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[15px]">
+          {money.format(tx.amount)}
+        </span>
+      </div>
+    </div>
   );
 }

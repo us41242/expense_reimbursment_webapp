@@ -78,7 +78,7 @@ export function CSVImporter() {
         return;
       }
       setNotice(
-        `Added ${rows.length} transaction${rows.length === 1 ? "" : "s"} to the categorizer queue.`,
+        `Added ${rows.length} transaction${rows.length === 1 ? "" : "s"} to the uncategorized queue.`,
       );
       setError(null);
       setPendingDupes(null);
@@ -263,7 +263,7 @@ export function CSVImporter() {
           </p>
           <p className="mt-2 text-xs text-zinc-500">
             After parsing, you&apos;ll choose which card or account this export is from.
-            Duplicates match on exact date + amount.
+            Duplicates match on exact date, amount, and merchant name.
           </p>
         </div>
         {error ? (
@@ -364,7 +364,7 @@ export function CSVImporter() {
               <p id={descId} className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                 {pendingDupes.duplicateRows.length} row
                 {pendingDupes.duplicateRows.length === 1 ? "" : "s"} match an existing
-                transaction (same date and amount). How should we continue?
+                transaction (or another row in this file) with the same date, amount, and merchant. How should we continue?
               </p>
             </div>
             <ul className="max-h-40 overflow-auto border-b border-zinc-200 px-5 py-3 text-sm dark:border-zinc-700">

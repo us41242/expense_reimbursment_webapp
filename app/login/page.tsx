@@ -29,7 +29,7 @@ export default function LoginPage() {
         setError(err.message);
         return;
       }
-      router.push("/categorizer");
+      router.push("/uncategorized");
       router.refresh();
       return;
     }
@@ -42,7 +42,7 @@ export default function LoginPage() {
       setError(err.message);
       return;
     }
-    router.push("/categorizer");
+    router.push("/uncategorized");
     router.refresh();
   }
 

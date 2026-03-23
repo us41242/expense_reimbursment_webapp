@@ -11,14 +11,14 @@ export function partitionImportRows(
   existing: Transaction[],
 ): { duplicateRows: ParsedImportRow[]; uniqueRows: ParsedImportRow[] } {
   const keys = new Set(
-    existing.map((t) => duplicateKey(t.date, t.amount)),
+    existing.map((t) => duplicateKey(t.date, t.amount, t.merchant)),
   );
   const seenInImport = new Set<string>();
   const duplicateRows: ParsedImportRow[] = [];
   const uniqueRows: ParsedImportRow[] = [];
 
   for (const row of rows) {
-    const key = duplicateKey(row.date, row.amount);
+    const key = duplicateKey(row.date, row.amount, row.merchant);
     if (keys.has(key) || seenInImport.has(key)) {
       duplicateRows.push(row);
     } else {

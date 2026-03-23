@@ -33,6 +33,7 @@ export function TransactionDetailClient({ id }: Props) {
     removeReceiptImage,
     setReimbursementBilled,
     setReimbursementPaid,
+    setTransactionNote,
   } = useTransactions();
 
   const [error, setError] = useState<string | null>(null);
@@ -100,10 +101,10 @@ export function TransactionDetailClient({ id }: Props) {
       <div className="space-y-4">
         <p className="text-zinc-600 dark:text-zinc-400">Transaction not found.</p>
         <Link
-          href="/categorizer"
+          href="/uncategorized"
           className="text-sm font-medium text-zinc-900 underline dark:text-zinc-100"
         >
-          Back to Categorizer
+          Back to Uncategorized
         </Link>
       </div>
     );
@@ -123,10 +124,10 @@ export function TransactionDetailClient({ id }: Props) {
           ← Back
         </button>
         <Link
-          href="/categorizer"
+          href="/uncategorized"
           className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
-          Categorizer
+          Uncategorized
         </Link>
       </div>
 
@@ -235,6 +236,32 @@ export function TransactionDetailClient({ id }: Props) {
             {error}
           </p>
         ) : null}
+      </section>
+
+      <section
+        aria-labelledby="notes-heading"
+        className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/60"
+      >
+        <h2
+          id="notes-heading"
+          className="text-sm font-semibold text-zinc-900 dark:text-zinc-50"
+        >
+          Notes
+        </h2>
+        <textarea
+          className="mt-3 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-zinc-700 dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-emerald-500 dark:focus:ring-emerald-500"
+          rows={3}
+          placeholder="Add a note (e.g., Client lunch with John Doe)..."
+          defaultValue={tx.notes || ""}
+          onBlur={async (e) => {
+            setError(null);
+            const res = await setTransactionNote(id, e.target.value);
+            if (res.error) setError(res.error);
+          }}
+        />
+        <p className="mt-2 text-[11px] text-zinc-500">
+          Notes are saved automatically when you tap away.
+        </p>
       </section>
 
       {reimbursable ? (

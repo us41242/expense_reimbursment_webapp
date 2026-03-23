@@ -27,6 +27,7 @@ export type Transaction = {
   paymentMethodName: string | null;
   /** ISO timestamp — used for categorizer queue order */
   createdAt: string;
+  notes?: string | null;
 };
 
 /** @deprecated Use receiptImageUrl / receiptStoragePath */
@@ -62,7 +63,7 @@ export function normalizeAmount(amount: number): number {
   return Math.round(amount * 100) / 100;
 }
 
-/** Stable key for duplicate detection: same calendar date + same amount. */
-export function duplicateKey(date: string, amount: number): string {
-  return `${date}|${normalizeAmount(amount)}`;
+/** Stable key for duplicate detection: same calendar date + amount + merchant. */
+export function duplicateKey(date: string, amount: number, merchant: string): string {
+  return `${date}|${normalizeAmount(amount)}|${merchant.trim().toLowerCase()}`;
 }

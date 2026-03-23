@@ -95,9 +95,22 @@ function parseRowsAsPositionFallback(rows: string[][]): ParsedImportRow[] {
   for (const cells of rows) {
     if (cells.length < 2) continue;
     const date = parseDate((cells[0] ?? "").trim());
-    const amount = parseAmount((cells[1] ?? "").trim());
-    const merchant = (cells[2]?.trim() ?? "") || "Unknown";
-    if (!date || amount === null) continue;
+    if (!date) continue;
+
+    // First try the strict (Date, Amount, Merchant) pattern
+    let amount = parseAmount((cells[1] ?? "").trim());
+    let merchant = (cells[2]?.trim() ?? "") || "Unknown";
+
+    // If cells[1] isn't a valid amount, try treating cells[2] as the amount (Date, Merchant, Amount)
+    if (amount === null && cells.length >= 3) {
+      const amountBackup = parseAmount((cells[2] ?? "").trim());
+      if (amountBackup !== null) {
+        amount = amountBackup;
+        merchant = (cells[1]?.trim() ?? "") || "Unknown";
+      }
+    }
+
+    if (amount === null) continue;
     out.push({ date, amount, merchant });
   }
   return out;

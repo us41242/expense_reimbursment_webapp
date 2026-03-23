@@ -48,6 +48,11 @@ type TransactionContextValue = {
     id: string,
     value: boolean,
   ) => Promise<{ error: string | null }>;
+  batchUpdateReimbursements: (
+    ids: string[],
+    patch: { reimbursement_billed?: boolean; reimbursement_paid?: boolean },
+  ) => Promise<{ error: string | null }>;
+  setTransactionNote: (id: string, note: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 };
 
@@ -154,7 +159,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
 
   const queueIds = useMemo(() => {
     return transactions
-      .filter((t) => t.category === null)
+      .filter((t) => t.category === null || t.category === "research-needed")
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       .map((t) => t.id);
   }, [transactions]);
@@ -338,6 +343,42 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     [refresh],
   );
 
+  const batchUpdateReimbursements = useCallback(
+    async (
+      ids: string[],
+      patch: { reimbursement_billed?: boolean; reimbursement_paid?: boolean },
+    ) => {
+      const supabase = createClient();
+      if (!supabase) return { error: "Supabase is not configured." };
+      const { error } = await supabase
+        .from("transactions")
+        .update({
+          ...patch,
+          updated_at: new Date().toISOString(),
+        })
+        .in("id", ids);
+      if (error) return { error: error.message };
+      await refresh();
+      return { error: null };
+    },
+    [refresh],
+  );
+
+  const setTransactionNote = useCallback(async (id: string, note: string) => {
+    const supabase = createClient();
+    if (!supabase) return { error: "Supabase is not configured." };
+    const { error } = await supabase
+      .from("transactions")
+      .update({
+        notes: note,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+    if (error) return { error: error.message };
+    await refresh();
+    return { error: null };
+  }, [refresh]);
+
   const signOut = useCallback(async () => {
     const supabase = createClient();
     if (!supabase) return;
@@ -362,6 +403,8 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       removeReceiptImage,
       setReimbursementBilled,
       setReimbursementPaid,
+      batchUpdateReimbursements,
+      setTransactionNote,
       signOut,
     }),
     [
@@ -380,6 +423,8 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       removeReceiptImage,
       setReimbursementBilled,
       setReimbursementPaid,
+      batchUpdateReimbursements,
+      setTransactionNote,
       signOut,
     ],
   );
