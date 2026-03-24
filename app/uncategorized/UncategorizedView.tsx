@@ -39,7 +39,7 @@ function TransactionCard({ tx }: { tx: Transaction }) {
       <div 
         className="absolute inset-0 z-0" 
         style={{ 
-          backgroundImage: `url('/ink-card.png')`,
+          backgroundImage: `url('/blue-card.png')`,
           backgroundSize: '100% 100%',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -251,8 +251,8 @@ export function UncategorizedView() {
                 transition={{ type: "spring", stiffness: 300, damping: 28 }}
                 className="absolute inset-x-0 top-10 mx-auto w-full max-w-[320px] rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/80 px-8 py-10 text-center dark:border-zinc-700 dark:bg-zinc-900/50"
               >
-                <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-                  <svg className="h-8 w-8 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40">
+                  <svg className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>

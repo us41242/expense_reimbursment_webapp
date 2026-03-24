@@ -27,7 +27,7 @@ function rowKey(r: ParsedImportRow, i: number) {
   return `${r.date}|${r.amount}|${r.merchant}|${i}`;
 }
 
-export function CSVImporter() {
+export function CSVImporter({ variant = "default" }: { variant?: "default" | "button" } = {}) {
   const {
     transactions,
     paymentMethods,
@@ -225,57 +225,88 @@ export function CSVImporter() {
   return (
     <>
       <div className="space-y-3">
-        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
-          Import from bank CSV
-        </p>
-        <div
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              inputRef.current?.click();
-            }
-          }}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={onDrop}
-          onClick={() => inputRef.current?.click()}
-          className={`cursor-pointer rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
-            dragOver
-              ? "border-emerald-500 bg-emerald-50/80 dark:border-emerald-400 dark:bg-emerald-950/40"
-              : "border-zinc-300 bg-zinc-50/50 hover:border-zinc-400 dark:border-zinc-600 dark:bg-zinc-900/30 dark:hover:border-zinc-500"
-          }`}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="sr-only"
-            aria-label="Upload bank CSV file"
-            onChange={onInputChange}
-          />
-          <p className="text-sm text-zinc-700 dark:text-zinc-200">
-            Drop a CSV here or click to browse
-          </p>
-          <p className="mt-2 text-xs text-zinc-500">
-            After parsing, you&apos;ll choose which card or account this export is from.
-            Duplicates match on exact date, amount, and merchant name.
-          </p>
-        </div>
-        {error ? (
-          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-            {error}
-          </p>
-        ) : null}
-        {notice ? (
-          <p className="text-sm text-emerald-700 dark:text-emerald-400" role="status">
-            {notice}
-          </p>
-        ) : null}
+        {variant === "button" ? (
+          <div>
+            <button
+              onClick={() => inputRef.current?.click()}
+              className="mt-6 flex w-full items-center justify-center rounded-2xl border border-emerald-900/50 bg-[#0A1612] px-6 py-6 text-[28px] font-bold tracking-tight text-emerald-500 shadow-sm transition hover:bg-[#0D1C17] dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/40"
+            >
+              Add Transactions
+            </button>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="sr-only"
+              aria-label="Upload bank CSV file"
+              onChange={onInputChange}
+            />
+            {error ? (
+              <p className="mt-3 text-center text-sm text-red-600 dark:text-red-400" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {notice ? (
+              <p className="mt-3 text-center text-sm text-emerald-700 dark:text-emerald-400" role="status">
+                {notice}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+              Import from bank CSV
+            </p>
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  inputRef.current?.click();
+                }
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+              onClick={() => inputRef.current?.click()}
+              className={`cursor-pointer rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
+                dragOver
+                  ? "border-emerald-500 bg-emerald-50/80 dark:border-emerald-400 dark:bg-emerald-950/40"
+                  : "border-zinc-300 bg-zinc-50/50 hover:border-zinc-400 dark:border-zinc-600 dark:bg-zinc-900/30 dark:hover:border-zinc-500"
+              }`}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="sr-only"
+                aria-label="Upload bank CSV file"
+                onChange={onInputChange}
+              />
+              <p className="text-sm text-zinc-700 dark:text-zinc-200">
+                Drop a CSV here or click to browse
+              </p>
+              <p className="mt-2 text-xs text-zinc-500">
+                After parsing, you&apos;ll choose which card or account this export is from.
+                Duplicates match on exact date, amount, and merchant name.
+              </p>
+            </div>
+            {error ? (
+              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {notice ? (
+              <p className="text-sm text-emerald-700 dark:text-emerald-400" role="status">
+                {notice}
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
 
       {awaitingPayment ? (

@@ -3,6 +3,7 @@
 import { useTransactions } from "@/context/TransactionContext";
 import { useMemo } from "react";
 import Link from "next/link";
+import { CSVImporter } from "@/components/CSVImporter";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -104,7 +105,7 @@ export function DashboardClient() {
         <section aria-labelledby="inbox-cta-heading" className="mt-8">
           <Link
             href="/uncategorized"
-            className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-12 text-center shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100/80 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/40 sm:py-16"
+            className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-8 text-center shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100/80 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/40 sm:py-12"
           >
             {/* Background decorative glow */}
             <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent to-emerald-100/50 opacity-0 transition duration-500 group-hover:opacity-100 dark:to-emerald-900/20" />
@@ -145,6 +146,10 @@ export function DashboardClient() {
           </p>
         </section>
       )}
+
+      <div>
+        <CSVImporter variant="button" />
+      </div>
     </>
   );
 }
