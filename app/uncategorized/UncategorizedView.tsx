@@ -6,13 +6,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const baseStyle = "border-white/20 bg-gradient-to-b from-zinc-800 to-black text-white hover:from-zinc-700 hover:to-zinc-900 hover:border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.15)] hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] dark:from-zinc-900 dark:to-black dark:border-white/10 dark:shadow-[0_0_15px_rgba(255,255,255,0.1)] dark:hover:from-zinc-800 dark:hover:to-zinc-950 dark:hover:border-white/30";
-
-const CATEGORY_ACTIONS: { category: ExpenseCategory; label: string; style: string }[] = [
-  { category: "personal", label: "Personal", style: baseStyle },
-  { category: "reimbursable", label: "Reimbursable", style: baseStyle },
-  { category: "non-reimbursable", label: "Non-Reimbursable", style: baseStyle },
-  { category: "research-needed", label: "Research Needed", style: baseStyle },
+const CATEGORY_ACTIONS: { category: ExpenseCategory; label: string }[] = [
+  { category: "personal", label: "Personal" },
+  { category: "reimbursable", label: "Reimbursable" },
+  { category: "non-reimbursable", label: "Non-Reimbursable" },
+  { category: "research-needed", label: "Research Needed" },
 ];
 
 const money = new Intl.NumberFormat("en-US", {
@@ -32,6 +30,17 @@ type Direction = 1 | -1;
 function TransactionCard({ tx }: { tx: Transaction }) {
   const d = useMemo(() => new Date(tx.date + "T12:00:00"), [tx.date]);
 
+  const bgImage = useMemo(() => {
+    const name = tx.paymentMethodName?.toLowerCase() || '';
+    if (name.includes('costco') || name.includes('citi')) {
+      return '/cards/Costco Citi Card.png';
+    }
+    if (name.includes('debit')) {
+      return '/cards/Chase Business Debit.png';
+    }
+    return '/blue-card.png';
+  }, [tx.paymentMethodName]);
+
   return (
     <div className="relative flex w-full max-w-[400px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/40 bg-zinc-900 shadow-[0_0_15px_rgba(255,255,255,0.3)] dark:border-white/20 dark:shadow-[0_0_15px_rgba(255,255,255,0.15)] aspect-[1.586/1]">
       
@@ -39,7 +48,7 @@ function TransactionCard({ tx }: { tx: Transaction }) {
       <div 
         className="absolute inset-0 z-0" 
         style={{ 
-          backgroundImage: `url('/blue-card.png')`,
+          backgroundImage: `url('${bgImage}')`,
           backgroundSize: '100% 100%',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -87,6 +96,17 @@ export function UncategorizedView() {
       currentId ? transactions.find((t) => t.id === currentId) ?? null : null,
     [transactions, currentId],
   );
+
+  const currentTheme = useMemo(() => {
+    if (!current) return "border-white/20 bg-zinc-900/80 shadow-[0_0_15px_rgba(255,255,255,0.1)] text-white";
+    const name = current.paymentMethodName?.toLowerCase() || '';
+    if (name.includes('costco') || name.includes('citi')) {
+      // Costco Citi: Glass black, red border, red glow
+      return "border-red-600/50 bg-black/70 shadow-[0_0_8px_rgba(220,38,38,0.25)] hover:border-red-500/80 hover:bg-black/90 hover:shadow-[0_0_15px_rgba(220,38,38,0.5)] text-red-50";
+    }
+    // Default / Chase Ink: Glass black, blue border, blue glow (#03012B)
+    return "border-[#03012B]/80 bg-black/70 shadow-[0_0_15px_rgba(3,1,43,0.6)] hover:border-[#03012B] hover:bg-black/90 hover:shadow-[0_0_30px_rgba(3,1,43,0.9)] text-blue-50";
+  }, [current]);
 
   const done = queueIds.length === 0 || index >= queueIds.length;
 
@@ -177,7 +197,7 @@ export function UncategorizedView() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-8.5rem)] flex-col items-center justify-between pt-1 pb-4">
+    <div className="flex h-[calc(100dvh-8.5rem)] flex-col items-center justify-start gap-10 pt-4 pb-4">
       
       {/* Top half: Swiping Card */}
       <motion.div
@@ -269,14 +289,14 @@ export function UncategorizedView() {
       </motion.div>
 
       {/* Bottom half: Buttons */}
-      <div className="mt-auto grid w-full max-w-[420px] grid-cols-2 gap-3 px-3 pb-2 sm:grid-cols-4 sm:gap-4 sm:px-0">
-        {CATEGORY_ACTIONS.map(({ category, label, style }) => (
+      <div className="grid w-full max-w-[420px] grid-cols-2 gap-4 px-3 pb-2 sm:grid-cols-4 sm:px-0">
+        {CATEGORY_ACTIONS.map(({ category, label }) => (
           <button
             key={category}
             type="button"
             disabled={done}
             onClick={() => advance(category)}
-            className={`flex flex-col aspect-[1.35/1] sm:aspect-auto sm:min-h-[80px] items-center justify-center rounded-[1.25rem] border p-2 text-center text-[13px] leading-tight tracking-wide font-semibold backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:active:scale-100 ${style}`}
+            className={`flex flex-col aspect-[1.35/1] sm:aspect-auto sm:min-h-[85px] items-center justify-center rounded-2xl border-[0.5px] p-2 text-center text-[13px] leading-tight tracking-wide font-semibold backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:active:scale-100 ${currentTheme}`}
           >
             {label}
           </button>

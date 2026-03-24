@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransactions } from "@/context/TransactionContext";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { CSVImporter } from "@/components/CSVImporter";
 
@@ -12,6 +12,19 @@ const money = new Intl.NumberFormat("en-US", {
 
 export function DashboardClient() {
   const { transactions, hydrated, signedIn } = useTransactions();
+  const [greeting, setGreeting] = useState("");
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      setGreeting("Günaydın Candan");
+    } else if (hour >= 12 && hour < 18) {
+      setGreeting("İyi günler Candan");
+    } else {
+      setGreeting("İyi akşamlar Candan");
+    }
+  }, [hydrated]);
 
   const metrics = useMemo(() => {
     let unbilled = 0;
@@ -77,6 +90,11 @@ export function DashboardClient() {
 
   return (
     <>
+      {greeting && (
+        <h1 className="mb-6 text-center text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+          {greeting}
+        </h1>
+      )}
       <section
         aria-labelledby="expense-overview-heading"
         className="grid gap-4 sm:grid-cols-3"
@@ -102,30 +120,30 @@ export function DashboardClient() {
       </section>
 
       {metrics.uncategorizedCount > 0 ? (
-        <section aria-labelledby="inbox-cta-heading" className="mt-8">
+        <section aria-labelledby="inbox-cta-heading" className="mt-4">
           <Link
             href="/uncategorized"
-            className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-8 text-center shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100/80 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/40 sm:py-12"
+            className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-5 text-center shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100/80 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/40 sm:py-6"
           >
             {/* Background decorative glow */}
             <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent to-emerald-100/50 opacity-0 transition duration-500 group-hover:opacity-100 dark:to-emerald-900/20" />
             
             <div className="relative z-10 flex flex-col items-center">
-              <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <span className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
               </span>
               <h2
                 id="inbox-cta-heading"
-                className="text-xl font-bold tracking-tight text-emerald-950 dark:text-emerald-50 sm:text-2xl"
+                className="text-lg font-bold tracking-tight text-emerald-950 dark:text-emerald-50 sm:text-xl"
               >
                 You have {metrics.uncategorizedCount} receipt{metrics.uncategorizedCount === 1 ? "" : "s"} waiting
               </h2>
               <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                 Keep your expenses up to date. Tap here to clear your inbox.
               </p>
-              <div className="mt-6 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition group-hover:bg-emerald-500 dark:bg-emerald-500 dark:text-emerald-950 dark:group-hover:bg-emerald-400">
+              <div className="mt-4 rounded-full bg-emerald-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition group-hover:bg-emerald-500 dark:bg-emerald-500 dark:text-emerald-950 dark:group-hover:bg-emerald-400">
                 Start Categorizing
               </div>
             </div>

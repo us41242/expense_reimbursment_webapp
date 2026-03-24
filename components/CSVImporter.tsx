@@ -229,7 +229,7 @@ export function CSVImporter({ variant = "default" }: { variant?: "default" | "bu
           <div>
             <button
               onClick={() => inputRef.current?.click()}
-              className="mt-6 flex w-full items-center justify-center rounded-2xl border border-emerald-900/50 bg-[#0A1612] px-6 py-6 text-[28px] font-bold tracking-tight text-emerald-500 shadow-sm transition hover:bg-[#0D1C17] dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/40"
+              className="mt-4 flex w-full items-center justify-center rounded-xl border border-emerald-900/50 bg-[#0A1612] px-6 py-4 text-xl font-bold tracking-tight text-emerald-500 shadow-sm transition hover:bg-[#0D1C17] dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/40"
             >
               Add Transactions
             </button>
@@ -332,10 +332,10 @@ export function CSVImporter({ variant = "default" }: { variant?: "default" | "bu
               This CSV is for one card or account. Which one? (You can manage options in
               Supabase or add rows to <code className="text-xs">payment_methods</code>.)
             </p>
-            <label className="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="mt-6 block text-base font-medium text-zinc-700 dark:text-zinc-300">
               Payment used
               <select
-                className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+                className="mt-3 w-full rounded-xl border border-zinc-300 bg-white px-4 py-4 text-lg text-zinc-900 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
                 value={selectedPaymentId}
                 onChange={(e) => setSelectedPaymentId(e.target.value)}
               >

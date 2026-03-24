@@ -34,6 +34,36 @@ export function ExportReportClient() {
     [rows],
   );
 
+  const downloadCSV = () => {
+    const header = "Date,Amount,Merchant,Category,Payment Method,Billed\n";
+    const csvContent = rows
+      .map((t) => {
+        const escape = (str: string | null) => {
+          if (!str) return '""';
+          return `"${str.replace(/"/g, '""')}"`;
+        };
+        return [
+          escape(t.date),
+          t.amount.toFixed(2),
+          escape(t.merchant),
+          escape(t.category),
+          escape(t.paymentMethodName),
+          t.reimbursementBilled ? "Yes" : "No",
+        ].join(",");
+      })
+      .join("\n");
+
+    const blob = new Blob([header + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `expense_report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (!hydrated) {
     return <p className="text-sm text-zinc-500">Loading…</p>;
   }
@@ -63,13 +93,22 @@ export function ExportReportClient() {
         >
           ← Back to Reports
         </Link>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-        >
-          Print
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={downloadCSV}
+            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+          >
+            CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+          >
+            Print
+          </button>
+        </div>
       </div>
 
       <article className="print-report space-y-8 text-zinc-900 dark:text-zinc-50 print:text-black">
