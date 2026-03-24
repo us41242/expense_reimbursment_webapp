@@ -3,6 +3,7 @@
 import { useTransactions } from "@/context/TransactionContext";
 import type { ExpenseCategory } from "@/lib/types";
 import Link from "next/link";
+import { useState } from "react";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -18,9 +19,15 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
 export function TransactionsListClient() {
   const { transactions, hydrated, configMissing, signedIn, setCategory, clearCategory } = useTransactions();
 
-  const sorted = [...transactions].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
+  const [filter, setFilter] = useState<"all" | "uncategorized" | "categorized">("all");
+
+  const sorted = [...transactions]
+    .filter((t) => {
+      if (filter === "uncategorized") return !t.category || t.category === "research-needed";
+      if (filter === "categorized") return !!t.category && t.category !== "research-needed";
+      return true;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (!hydrated) {
     return <p className="text-sm text-zinc-500">Loading…</p>;
@@ -43,8 +50,26 @@ export function TransactionsListClient() {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
-      <div className="flex flex-col">
+    <div className="space-y-6">
+      {/* View Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        {(["all", "uncategorized", "categorized"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              filter === f
+                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            }`}
+          >
+            {f === "all" ? "All Receipts" : f === "uncategorized" ? "Uncategorized" : "Completed"}
+          </button>
+        ))}
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-col">
         {sorted.length === 0 ? (
           <div className="px-4 py-12 text-center text-zinc-500">
             No transactions found.
@@ -118,6 +143,7 @@ export function TransactionsListClient() {
             );
           })
         )}
+      </div>
       </div>
     </div>
   );
