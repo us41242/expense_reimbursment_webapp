@@ -160,7 +160,13 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   const queueIds = useMemo(() => {
     return transactions
       .filter((t) => t.category === null || t.category === "research-needed")
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .sort((a, b) => {
+        // Sort by date first (oldest to newest)
+        const dateCmp = a.date.localeCompare(b.date);
+        if (dateCmp !== 0) return dateCmp;
+        // Fallback to createdAt
+        return a.createdAt.localeCompare(b.createdAt);
+      })
       .map((t) => t.id);
   }, [transactions]);
 
