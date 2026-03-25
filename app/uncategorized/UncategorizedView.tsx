@@ -43,18 +43,18 @@ function TransactionCard({ tx }: { tx: Transaction }) {
 
   return (
     <div className="relative flex w-full max-w-[400px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/40 bg-zinc-900 shadow-[0_0_15px_rgba(255,255,255,0.3)] dark:border-white/20 dark:shadow-[0_0_15px_rgba(255,255,255,0.15)] aspect-[1.586/1]">
-      
+
       {/* Card Image */}
-      <div 
-        className="absolute inset-0 z-0" 
-        style={{ 
+      <div
+        className="absolute inset-0 z-0"
+        style={{
           backgroundImage: `url('${bgImage}')`,
           backgroundSize: '100% 100%',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }}
       />
-      
+
       {/* Semi-transparent Overlay */}
       <div className="absolute inset-0 z-0 bg-zinc-900/50 dark:bg-black/60" />
 
@@ -198,7 +198,7 @@ export function UncategorizedView() {
 
   return (
     <div className="flex h-[calc(100dvh-8.5rem)] flex-col items-center justify-start gap-10 pt-4 pb-4">
-      
+
       {/* Top half: Swiping Card */}
       <motion.div
         className="flex w-full flex-col items-center px-1.5 md:px-4"
@@ -250,9 +250,9 @@ export function UncategorizedView() {
                   Swipe right to skip
                   {canUndo ? " • down to undo" : ""}
                 </p>
-                
+
                 <TransactionCard tx={current} />
-                
+
                 <p className="mt-3 text-center">
                   <Link
                     href={`/transactions/${current.id}`}

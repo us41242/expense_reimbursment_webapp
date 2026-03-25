@@ -3,6 +3,7 @@ import type { ExpenseCategory, PaymentMethod, Transaction } from "@/lib/types";
 
 export type TransactionRowDb = {
   id: string;
+  teller_id?: string | null;
   user_id: string;
   amount: number;
   date: string;
