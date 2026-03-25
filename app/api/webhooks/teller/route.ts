@@ -33,15 +33,11 @@ export async function POST(request: Request) {
 
     const body = JSON.parse(rawBody);
 
-    // Teller nests everything inside `payload` and we check for type `transactions.processed`
     if (body.type === "transactions.processed" && body.payload?.transactions) {
-      
-      // We initialize the Supabase client INSIDE the POST function.
-      // This solves the React build error because Next.js evaluates file-level 
-      // code during build time where secret ENVs like SERVICE_ROLE_KEY are often missing.
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
         throw new Error("Missing Supabase configuration.");
       }
+      
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -59,36 +55,73 @@ export async function POST(request: Request) {
 
       const transactions = body.payload.transactions;
       
-      // Loop over the array of transactions
       for (const tx of transactions) {
-        const { error } = await supabase
-          .from("transactions")
-          .upsert(
-            {
-              teller_id: tx.id,             
-              user_id: userId,
-              amount: Math.abs(parseFloat(tx.amount)), 
-              date: tx.date,
-              merchant: tx.description, 
-              category: null, 
-              reimbursement_billed: false,
-              reimbursement_paid: false,
-              payment_method_id: null, 
-            },
-            { 
-              onConflict: "teller_id" 
-            }
-          );
+        const txAmount = Math.abs(parseFloat(tx.amount));
+        const txDate = tx.date;
 
-        if (error) {
-          console.error(`Supabase insert error for tx ${tx.id}:`, error.message);
+        // 1. Check if a transaction with this exact teller_id is already in the DB
+        const { data: existingById } = await supabase
+          .from("transactions")
+          .select("id")
+          .eq("teller_id", tx.id)
+          .maybeSingle();
+
+        if (existingById) {
+          // Already synced this exact Teller transaction, we can skip it to avoid overwriting user edits.
+          console.log(`Transaction ${tx.id} already exists (synced previously). Skipping.`);
+          continue;
+        }
+
+        // 2. Check if there is an OLD historical transaction (e.g. from a CSV upload) 
+        // that lacks a teller_id, but matches the EXACT Date and Amount.
+        const { data: possibleMatches, error: matchError } = await supabase
+          .from("transactions")
+          .select("id")
+          .is("teller_id", null) 
+          .eq("date", txDate)
+          .eq("amount", txAmount);
+
+        if (possibleMatches && possibleMatches.length > 0) {
+          // We found a historical transaction that matches!
+          // Link it by updating the old row with the new teller_id so it never duplicates again.
+          const matchToLink = possibleMatches[0];
+
+          const { error: updateError } = await supabase
+            .from("transactions")
+            .update({ teller_id: tx.id })
+            .eq("id", matchToLink.id);
+
+          if (updateError) {
+            console.error(`Failed to link historical tx ${matchToLink.id} to Teller:`, updateError.message);
+          } else {
+            console.log(`Linked historical transaction ${matchToLink.id} to Teller ${tx.id}`);
+          }
+          continue; 
+        }
+
+        // 3. If it has no teller_id match and no historical match, it's completely NEW!
+        const { error: insertError } = await supabase
+          .from("transactions")
+          .insert({
+            teller_id: tx.id,             
+            user_id: userId,
+            amount: txAmount, 
+            date: txDate,
+            merchant: tx.description, 
+            category: null, 
+            reimbursement_billed: false,
+            reimbursement_paid: false,
+            payment_method_id: null, 
+          });
+
+        if (insertError) {
+          console.error(`Supabase insert error for tx ${tx.id}:`, insertError.message);
         } else {
-          console.log(`Successfully synced teller transaction: ${tx.id}`);
+          console.log(`Successfully inserted brand new teller transaction: ${tx.id}`);
         }
       }
     }
 
-    // Always acknowledge the webhook
     return NextResponse.json({ success: true }, { status: 200 });
 
   } catch (error) {
