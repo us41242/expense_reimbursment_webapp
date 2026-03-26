@@ -1,13 +1,18 @@
 import fs from "fs";
 import https from "https";
+import os from "os";
 import { createClient } from "@supabase/supabase-js";
 
-// Ensure Supabase variables are loaded (Run this script with: node --env-file=../.env.local fetch-history.mjs)
+// Ensure Supabase variables are loaded
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; 
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const DEFAULT_USER_ID = process.env.TELLER_DEFAULT_USER_ID;
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("❌ Missing Supabase Keys! Make sure to run this with --env-file=../.env.local");
+if (!SUPABASE_URL || !SUPABASE_KEY || !DEFAULT_USER_ID) {
+  console.error("❌ The script is missing one or more required environment variables in your .env.local file!");
+  if (!SUPABASE_URL) console.error("   - Missing: NEXT_PUBLIC_SUPABASE_URL");
+  if (!SUPABASE_KEY) console.error("   - Missing: SUPABASE_SERVICE_ROLE_KEY (Get this from Supabase Dashboard -> Project Settings -> API)");
+  if (!DEFAULT_USER_ID) console.error("   - Missing: TELLER_DEFAULT_USER_ID (Your user UID from Supabase -> Authentication -> Users)");
   process.exit(1);
 }
 
@@ -16,8 +21,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 // ==========================================
 // 🚨 REQUIRED SETUP: PASTE YOUR TOKEN HERE
 // ==========================================
-const ACCESS_TOKEN = "YOUR_TELLER_ACCESS_TOKEN_HERE"; 
-const DEFAULT_USER_ID = process.env.TELLER_DEFAULT_USER_ID; 
+const ACCESS_TOKEN = "token_hwqan2mversqomwmqtm242p4xa";
 
 async function fetchTeller(path) {
   return new Promise((resolve, reject) => {
@@ -28,8 +32,8 @@ async function fetchTeller(path) {
       path,
       method: "GET",
       auth: `${ACCESS_TOKEN}:`, // Access tokens are passed as the HTTP Basic Auth username
-      cert: fs.readFileSync("./auth/keys/certificate.pem"),
-      key: fs.readFileSync("./auth/keys/private_key.pem"),
+      cert: fs.readFileSync(`${os.homedir()}/.teller_keys/certificate.pem`),
+      key: fs.readFileSync(`${os.homedir()}/.teller_keys/private_key.pem`),
     };
 
     const req = https.request(options, (res) => {
@@ -38,7 +42,7 @@ async function fetchTeller(path) {
       res.on("end", () => {
         try {
           resolve(JSON.parse(data));
-        } catch(e) { reject(e); }
+        } catch (e) { reject(e); }
       });
     });
 
@@ -53,14 +57,14 @@ async function main() {
     process.exit(1);
   }
 
-  if (!fs.existsSync("./auth/keys/certificate.pem")) {
-    console.error("❌ Missing mTLS certificate.pem! Please download it from the Teller Dashboard and place it in teller/auth/keys/");
+  if (!fs.existsSync(`${os.homedir()}/.teller_keys/certificate.pem`)) {
+    console.error(`❌ Missing mTLS certificate.pem! Checked at: ${os.homedir()}/.teller_keys/certificate.pem`);
     process.exit(1);
   }
 
   console.log("Fetching accounts from Teller...");
   const accounts = await fetchTeller("/accounts");
-  
+
   if (accounts.error) {
     console.error("❌ Teller Auth Error:", accounts.error);
     process.exit(1);
@@ -70,17 +74,17 @@ async function main() {
 
   for (const account of accounts) {
     console.log(`Syncing Account: ${account.name} (*${account.last4})`);
-    
+
     let hasMore = true;
     let fromId = null;
     let fetchedCount = 0;
 
     // Teller uses cursor pagination. We loop over pages of 250 until we hit Jan 1, 2026.
     while (hasMore) {
-      const url = fromId 
+      const url = fromId
         ? `/accounts/${account.id}/transactions?count=250&from_id=${fromId}`
         : `/accounts/${account.id}/transactions?count=250`;
-        
+
       const txs = await fetchTeller(url);
 
       if (!txs || txs.length === 0 || txs.error) {
@@ -98,7 +102,7 @@ async function main() {
 
         fetchedCount++;
         const txAmount = Math.abs(parseFloat(tx.amount));
-        
+
         await supabase
           .from("transactions")
           .upsert({
@@ -107,7 +111,7 @@ async function main() {
             amount: txAmount,
             date: tx.date,
             merchant: tx.description,
-            category: null, 
+            category: null,
             reimbursement_billed: false,
             reimbursement_paid: false,
             payment_method_id: null,

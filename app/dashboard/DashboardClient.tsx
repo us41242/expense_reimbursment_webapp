@@ -11,20 +11,25 @@ const money = new Intl.NumberFormat("en-US", {
 });
 
 export function DashboardClient() {
-  const { transactions, hydrated, signedIn } = useTransactions();
+  const { transactions, hydrated, signedIn, userEmail } = useTransactions();
   const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
     if (!hydrated) return;
     const hour = new Date().getHours();
+    
+    const isCandan = userEmail?.toLowerCase().includes('candan');
+    const nameStr = userEmail ? userEmail.split('@')[0] : 'User';
+    const name = isCandan ? 'Candan' : (nameStr.charAt(0).toUpperCase() + nameStr.slice(1));
+
     if (hour >= 5 && hour < 12) {
-      setGreeting("Günaydın Candan");
+      setGreeting(isCandan ? `Günaydın ${name}` : `Good morning ${name}`);
     } else if (hour >= 12 && hour < 18) {
-      setGreeting("İyi günler Candan");
+      setGreeting(isCandan ? `İyi günler ${name}` : `Good afternoon ${name}`);
     } else {
-      setGreeting("İyi akşamlar Candan");
+      setGreeting(isCandan ? `İyi akşamlar ${name}` : `Good evening ${name}`);
     }
-  }, [hydrated]);
+  }, [hydrated, userEmail]);
 
   const metrics = useMemo(() => {
     let unbilled = 0;
