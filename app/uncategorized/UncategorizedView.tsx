@@ -33,10 +33,13 @@ function TransactionCard({ tx }: { tx: Transaction }) {
   const bgImage = useMemo(() => {
     const name = tx.paymentMethodName?.toLowerCase() || '';
     if (name.includes('costco') || name.includes('citi')) {
-      return '/cards/Costco Citi Card.png';
+      return '/cards/Citi Costco.png';
     }
     if (name.includes('debit')) {
       return '/cards/Chase Business Debit.png';
+    }
+    if (name.includes('ink')) {
+      return '/cards/Chase Ink.png';
     }
     return '/blue-card.png';
   }, [tx.paymentMethodName]);

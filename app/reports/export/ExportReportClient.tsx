@@ -21,11 +21,13 @@ export function ExportReportClient() {
 
   const rows = useMemo(
     () =>
-      transactions.filter(
-        (t) =>
-          t.category === "reimbursable" &&
-          !t.reimbursementPaid,
-      ),
+      transactions
+        .filter(
+          (t) =>
+            t.category === "reimbursable" &&
+            !t.reimbursementPaid,
+        )
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
 
@@ -112,23 +114,23 @@ export function ExportReportClient() {
       </div>
 
       <article className="print-report space-y-8 text-zinc-900 dark:text-zinc-50 print:text-black">
-        <header className="border-b border-zinc-200 pb-6 print:border-zinc-300">
-          <h1 className="text-2xl font-bold tracking-tight print:text-2xl">
+        <header className="border-b border-zinc-200 pb-6 dark:border-zinc-800 print:border-zinc-300">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white print:text-2xl print:text-black">
             Reimbursement expense report
           </h1>
-          <p className="mt-2 text-sm text-zinc-600 print:text-zinc-600">
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 print:text-zinc-600">
             Unpaid reimbursable items · Generated{" "}
             {new Intl.DateTimeFormat("en-US", {
               dateStyle: "long",
             }).format(new Date())}
           </p>
-          <p className="mt-4 text-lg font-semibold tabular-nums print:text-xl">
+          <p className="mt-4 text-lg font-semibold tabular-nums text-zinc-900 dark:text-white print:text-xl print:text-black">
             Total: {money.format(total)}
           </p>
         </header>
 
         {rows.length === 0 ? (
-          <p className="text-zinc-600 print:text-zinc-600">
+          <p className="text-zinc-600 dark:text-zinc-400 print:text-zinc-600">
             No unpaid reimbursable expenses to include.
           </p>
         ) : (
@@ -147,17 +149,17 @@ function ExportItem({ tx }: { tx: Transaction }) {
   const d = new Date(tx.date + "T12:00:00");
 
   return (
-    <li className="break-inside-avoid border-b border-zinc-200 pb-8 last:border-0 print:border-zinc-300 print:pb-6">
+    <li className="break-inside-avoid border-b border-zinc-200 pb-8 last:border-0 dark:border-zinc-800 print:border-zinc-300 print:pb-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-semibold text-zinc-900 print:text-lg">{tx.merchant}</p>
-          <p className="text-sm text-zinc-600 print:text-zinc-700">
+          <p className="font-semibold text-zinc-900 dark:text-white print:text-black print:text-lg">{tx.merchant}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 print:text-zinc-700">
             {dateFmt.format(d)}
           </p>
-          <p className="mt-2 text-xl font-semibold tabular-nums print:text-2xl">
+          <p className="mt-2 text-xl font-semibold tabular-nums text-zinc-900 dark:text-white print:text-black print:text-2xl">
             {money.format(tx.amount)}
           </p>
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-zinc-600 print:text-zinc-700">
+          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400 print:text-zinc-700">
             <div>
               <dt className="inline font-medium">Billed: </dt>
               <dd className="inline">{tx.reimbursementBilled ? "Yes" : "No"}</dd>

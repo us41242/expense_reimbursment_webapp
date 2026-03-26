@@ -16,6 +16,14 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
+function getCardIcon(name: string | null) {
+  const n = name?.toLowerCase() || '';
+  if (n.includes('costco') || n.includes('citi')) return '/cards/Citi Costco Icon.png';
+  if (n.includes('debit')) return '/cards/Chase Business Debit Icon.png';
+  if (n.includes('ink')) return '/cards/Chase Ink Icon.png';
+  return null;
+}
+
 export function TransactionsListClient() {
   const { transactions, hydrated, configMissing, signedIn, setCategory, clearCategory } = useTransactions();
 
@@ -84,22 +92,42 @@ export function TransactionsListClient() {
               >
                 {/* Image & Text Header */}
                 <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-                    {tx.receiptImageUrl ? (
+                  <div className="flex flex-col items-center justify-start shrink-0">
+                    <div className="h-14 w-14 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+                      {tx.receiptImageUrl ? (
+                        <Link href={`/transactions/${tx.id}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={tx.receiptImageUrl}
+                            alt="Receipt"
+                            className="h-full w-full object-cover transition hover:opacity-80"
+                          />
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/transactions/${tx.id}`}
+                          className="flex h-full w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800 transition hover:opacity-80"
+                        >
+                          {(() => {
+                            const iconUrl = getCardIcon(tx.paymentMethodName);
+                            if (iconUrl) {
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              return <img src={iconUrl} alt="Card" className="h-full w-full object-cover" />;
+                            }
+                            return (
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                                Add
+                              </span>
+                            );
+                          })()}
+                        </Link>
+                      )}
+                    </div>
+                    {!tx.receiptImageUrl && (
                       <Link href={`/transactions/${tx.id}`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={tx.receiptImageUrl}
-                          alt="Receipt"
-                          className="h-full w-full object-cover transition hover:opacity-80"
-                        />
-                      </Link>
-                    ) : (
-                      <Link
-                        href={`/transactions/${tx.id}`}
-                        className="flex h-full w-full items-center justify-center text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
-                      >
-                        Add
+                        <span className="mt-1 block text-center text-[10px] font-medium tracking-tight text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">
+                          Add Receipt
+                        </span>
                       </Link>
                     )}
                   </div>

@@ -30,25 +30,25 @@ export function ReportsClient() {
 
   const unbilledTxs = useMemo(
     () =>
-      transactions.filter(
-        (t) => t.category === "reimbursable" && !t.reimbursementBilled && !t.reimbursementPaid
-      ),
+      transactions
+        .filter((t) => t.category === "reimbursable" && !t.reimbursementBilled && !t.reimbursementPaid)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
 
   const billedTxs = useMemo(
     () =>
-      transactions.filter(
-        (t) => t.category === "reimbursable" && t.reimbursementBilled && !t.reimbursementPaid
-      ),
+      transactions
+        .filter((t) => t.category === "reimbursable" && t.reimbursementBilled && !t.reimbursementPaid)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
 
   const paidTxs = useMemo(
     () =>
-      transactions.filter(
-        (t) => t.category === "reimbursable" && t.reimbursementPaid
-      ),
+      transactions
+        .filter((t) => t.category === "reimbursable" && t.reimbursementPaid)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
 
