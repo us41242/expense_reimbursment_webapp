@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/AppShell";
 import { Providers } from "@/components/Providers";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,6 +35,9 @@ export default function RootLayout({
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
+        
+        {/* Globally load Teller Connect synchronously before app logic blocks occur */}
+        <Script src="https://cdn.teller.io/connect/connect.js" strategy="beforeInteractive" />
       </body>
     </html>
   );

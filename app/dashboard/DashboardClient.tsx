@@ -36,6 +36,7 @@ export function DashboardClient() {
     let uncategorized = 0;
     let billedUnpaid = 0;
     let uncategorizedCount = 0;
+    let advances = 0;
 
     for (const t of transactions) {
       if (t.category === "reimbursable") {
@@ -45,13 +46,36 @@ export function DashboardClient() {
           billedUnpaid += t.amount;
         }
       }
+      if (t.category === "advance") {
+        // Advances are logged as negative amounts, so we use Math.abs to subtract them
+        advances += Math.abs(t.amount);
+      }
       if (t.category === null || t.category === "research-needed") {
         uncategorized += t.amount;
         uncategorizedCount++;
       }
     }
 
-    return { unbilled, uncategorized, billedUnpaid, uncategorizedCount };
+    // Cascade advances to lower the effective "owed" metrics
+    let trueUnbilled = unbilled;
+    let trueBilledUnpaid = billedUnpaid;
+    
+    if (advances > 0) {
+      if (trueUnbilled >= advances) {
+         trueUnbilled -= advances;
+      } else {
+         const remainder = advances - trueUnbilled;
+         trueUnbilled = 0;
+         trueBilledUnpaid = Math.max(0, trueBilledUnpaid - remainder);
+      }
+    }
+
+    return { 
+      unbilled: trueUnbilled, 
+      uncategorized, 
+      billedUnpaid: trueBilledUnpaid, 
+      uncategorizedCount 
+    };
   }, [transactions]);
 
   if (!hydrated) {

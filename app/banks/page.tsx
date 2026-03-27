@@ -23,13 +23,34 @@ export default function BanksPage() {
       const tellerConnect = window.TellerConnect.setup({
         applicationId: appId,
         environment: "sandbox",
+        products: ["transactions"],
         onInit: function () {
           console.log("Teller Connect initialized successfully.");
         },
-        onSuccess: function (enrollment: any) {
+        onSuccess: async function (enrollment: any) {
           console.log("Teller connection successful! Enrollment details:", enrollment);
-          alert("Institution connected successfully! (Check console for tokens if in sandbox)");
-          setIsLinking(false);
+          try {
+            const res = await fetch("/api/teller/enroll", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ 
+                accessToken: enrollment.accessToken,
+                enrollmentId: enrollment.enrollment.id,
+                institutionName: enrollment.enrollment.institution.name
+              }),
+            });
+            
+            if (res.ok) {
+              alert(`Successfully linked ${enrollment.enrollment.institution.name}!`);
+            } else {
+              console.error("Failed to save token to database:", await res.text());
+              alert("Bank connected, but we failed to save the secure token to your account database.");
+            }
+          } catch (err) {
+            console.error("API route error:", err);
+          } finally {
+            setIsLinking(false);
+          }
         },
         onExit: function () {
           console.log("Teller Connect closed by user.");
@@ -148,9 +169,6 @@ export default function BanksPage() {
           </div>
         </div>
       </div>
-      
-      {/* Inject Teller Connect SDK into document safely using Next Script */}
-      <Script src="https://cdn.teller.io/connect/connect.js" strategy="lazyOnload" />
     </div>
   );
 }

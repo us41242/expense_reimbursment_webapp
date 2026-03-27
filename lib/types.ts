@@ -2,7 +2,8 @@ export type ExpenseCategory =
   | "personal"
   | "reimbursable"
   | "non-reimbursable"
-  | "research-needed";
+  | "research-needed"
+  | "advance";
 
 export type PaymentMethod = {
   id: string;
