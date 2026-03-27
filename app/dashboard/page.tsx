@@ -10,7 +10,6 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center border-b pb-4">
         <h1 className="text-xl font-bold">Expense Dashboard</h1>
         <div className="flex gap-2">
-          {/* These buttons enable the Teller functionality */}
           <LinkBankButton userId={userId} />
           <SyncButton />
         </div>
