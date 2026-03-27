@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useTellerConnect } from 'teller-connect-react';
+import { useTellerConnect } from '@/hooks/useTellerConnect'; // Point to your local file
 
 interface Props {
-    userId: string; // Pass the Supabase User ID here
+    userId: string;
 }
 
 export default function LinkBankButton({ userId }: Props) {
@@ -12,9 +12,6 @@ export default function LinkBankButton({ userId }: Props) {
         applicationId: process.env.NEXT_PUBLIC_TELLER_APP_ID!,
         environment: 'development',
         onSuccess: async (enrollment) => {
-            console.log("Teller Success:", enrollment);
-
-            // Send the token to your backend to save it in Supabase
             const response = await fetch('/api/teller/connect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -28,11 +25,8 @@ export default function LinkBankButton({ userId }: Props) {
 
             if (response.ok) {
                 alert(`${enrollment.enrollment.institution.name} linked successfully!`);
-                window.location.reload(); // Refresh to show new transactions
+                window.location.reload();
             }
-        },
-        onExit: () => {
-            console.log("User closed the Teller widget.");
         },
     });
 
@@ -40,7 +34,7 @@ export default function LinkBankButton({ userId }: Props) {
         <button
             onClick={() => open()}
             disabled={!ready}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
         >
             {ready ? 'Link Bank Account' : 'Loading Teller...'}
         </button>
