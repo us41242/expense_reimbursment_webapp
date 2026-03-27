@@ -1,5 +1,9 @@
 import { ExportReportClient } from "./ExportReportClient";
 
+export const metadata = {
+  title: " ",
+};
+
 export default function ExportReportPage() {
   return (
     <div className="space-y-6">
