@@ -31,7 +31,7 @@ export function ReportsClient() {
   const unbilledTxs = useMemo(
     () =>
       transactions
-        .filter((t) => t.category === "reimbursable" && !t.reimbursementBilled && !t.reimbursementPaid)
+        .filter((t) => (t.category === "reimbursable" || t.category === "advance") && !t.reimbursementBilled && !t.reimbursementPaid)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
@@ -192,23 +192,30 @@ function ReportRow({ tx }: { tx: Transaction }) {
     <div className="flex flex-col gap-3 border-b border-zinc-200 bg-white p-4 transition-colors last:border-0 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/20 dark:hover:bg-zinc-900/40 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="flex items-center gap-4">
         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-          {tx.receiptImageUrl ? (
-            <Link href={`/transactions/${tx.id}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={tx.receiptImageUrl}
-                alt="Receipt"
-                className="h-full w-full object-cover transition hover:opacity-80"
-              />
-            </Link>
-          ) : (
-            <Link
-              href={`/transactions/${tx.id}`}
-              className="flex h-full w-full items-center justify-center text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
-            >
-              Add
-            </Link>
-          )}
+          {(() => {
+            const isWireTransfer = tx.category === "advance" || tx.merchant.startsWith("Payout from");
+            if (isWireTransfer) {
+              return (
+                <Link href={`/transactions/${tx.id}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/cards/Wire Transfer Icon.png" alt="Wire Transfer" className="h-full w-full object-cover transition hover:opacity-80" />
+                </Link>
+              );
+            }
+            if (tx.receiptImageUrl) {
+              return (
+                <Link href={`/transactions/${tx.id}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={tx.receiptImageUrl} alt="Receipt" className="h-full w-full object-cover transition hover:opacity-80" />
+                </Link>
+              );
+            }
+            return (
+              <Link href={`/transactions/${tx.id}`} className="flex h-full w-full items-center justify-center text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">
+                Add
+              </Link>
+            );
+          })()}
         </div>
         
         <div className="flex flex-col">

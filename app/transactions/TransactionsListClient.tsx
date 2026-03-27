@@ -146,8 +146,10 @@ function TransactionsListContent() {
                           className="flex h-full w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800 transition hover:opacity-80"
                         >
                           {(() => {
-                            if (tx.category === "advance") {
-                              return <ArrowRightLeft className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />;
+                            const isWireTransfer = tx.category === "advance" || tx.merchant.startsWith("Payout from");
+                            if (isWireTransfer) {
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              return <img src="/cards/Wire Transfer Icon.png" alt="Wire Transfer" className="h-full w-full object-cover" />;
                             }
                             const iconUrl = getCardIcon(tx.paymentMethodName);
                             if (iconUrl) {
