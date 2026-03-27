@@ -17,7 +17,7 @@ export function DashboardClient() {
   useEffect(() => {
     if (!hydrated) return;
     const hour = new Date().getHours();
-    
+
     const isCandan = userEmail?.toLowerCase().includes('candan');
     const nameStr = userEmail ? userEmail.split('@')[0] : 'User';
     const name = isCandan ? 'Candan' : (nameStr.charAt(0).toUpperCase() + nameStr.slice(1));
@@ -132,7 +132,7 @@ export function DashboardClient() {
           >
             {/* Background decorative glow */}
             <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent to-emerald-100/50 opacity-0 transition duration-500 group-hover:opacity-100 dark:to-emerald-900/20" />
-            
+
             <div className="relative z-10 flex flex-col items-center">
               <span className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
