@@ -2,17 +2,46 @@
 
 import { Building2, Landmark, Lock, ShieldCheck, CreditCard, Plus, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import Script from "next/script";
+
+declare global {
+  interface Window {
+    TellerConnect?: any;
+  }
+}
 
 export default function BanksPage() {
   const [isLinking, setIsLinking] = useState(false);
 
   const handleLinkBank = () => {
     setIsLinking(true);
-    // Simulate Teller integration opening
-    setTimeout(() => {
-      alert("Teller.io Connect modal would open here to securely link your institution.");
+
+    if (typeof window !== "undefined" && window.TellerConnect) {
+      // If we don't have a specific env var, use a fallback placeholder that prompts a setup warning or sandbox id
+      const appId = process.env.NEXT_PUBLIC_TELLER_APP_ID || "app_id_placeholder";
+      
+      const tellerConnect = window.TellerConnect.setup({
+        applicationId: appId,
+        environment: "sandbox",
+        onInit: function () {
+          console.log("Teller Connect initialized successfully.");
+        },
+        onSuccess: function (enrollment: any) {
+          console.log("Teller connection successful! Enrollment details:", enrollment);
+          alert("Institution connected successfully! (Check console for tokens if in sandbox)");
+          setIsLinking(false);
+        },
+        onExit: function () {
+          console.log("Teller Connect closed by user.");
+          setIsLinking(false);
+        },
+      });
+
+      tellerConnect.open();
+    } else {
+      alert("Uh oh! The Teller.io secure library isn't loaded yet. Try again in a moment!");
       setIsLinking(false);
-    }, 1500);
+    }
   };
 
   const connectedBanks = [
@@ -119,6 +148,9 @@ export default function BanksPage() {
           </div>
         </div>
       </div>
+      
+      {/* Inject Teller Connect SDK into document safely using Next Script */}
+      <Script src="https://cdn.teller.io/connect/connect.js" strategy="lazyOnload" />
     </div>
   );
 }
