@@ -365,6 +365,7 @@ function ToggleRow({
 }
 
 function AdvanceSettings({ tx, transactions, refresh, submitting, setTogglingAdvance }: { tx: Transaction; transactions: Transaction[]; refresh: () => Promise<void>; submitting: boolean; setTogglingAdvance: (b: boolean) => void }) {
+  const router = useRouter();
   
   const d = new Date(tx.date + "T12:00:00");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -455,6 +456,7 @@ function AdvanceSettings({ tx, transactions, refresh, submitting, setTogglingAdv
 
     await refresh();
     setTogglingAdvance(false);
+    router.back();
   };
 
   const totalRawAmount = Math.abs(tx.amount);
@@ -495,7 +497,7 @@ function AdvanceSettings({ tx, transactions, refresh, submitting, setTogglingAdv
           </button>
           
           <button type="button" onClick={saveSplits} disabled={submitting} className="flex items-center justify-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all">
-            {submitting ? "Saving..." : "Move to Reimbursable Expenses"}
+            {submitting ? "Saving..." : "Complete"}
           </button>
         </div>
       </div>
