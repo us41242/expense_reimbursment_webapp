@@ -139,19 +139,35 @@ export function ExportReportClient() {
                     <th className="py-2.5 pr-4 font-bold whitespace-nowrap">Date</th>
                     <th className="py-2.5 pr-4 font-bold">Business / Description</th>
                     <th className="py-2.5 pr-4 font-bold text-right whitespace-nowrap">Charge</th>
-                    <th className="py-2.5 font-bold text-right">Account it was paid from</th>
+                    <th className="py-2.5 font-bold text-right">Paid From</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((tx) => {
                     const absAmt = Math.abs(tx.amount);
+                    let paymentMethodStr = tx.paymentMethodName || "Unknown";
+                    
+                    const splitMatch = tx.merchant.match(/Payout from (\d+) to/);
+                    if (splitMatch) {
+                      paymentMethodStr = `Payment ${splitMatch[1]}`;
+                    } else if (tx.notes?.includes("[Advance Payment]")) {
+                      const sameDayAdvances = transactions
+                        .filter((t) => t.notes?.includes("[Advance Payment]") && t.date === tx.date)
+                        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                      let idx = sameDayAdvances.findIndex((t) => t.id === tx.id);
+                      if (idx === -1) idx = sameDayAdvances.length;
+                      const [,,dd] = tx.date.split("-");
+                      const mm = tx.date.split("-")[1];
+                      paymentMethodStr = `Advance Payment ${idx + 1}${mm}${dd}`;
+                    }
+
                     return (
                       <tr key={tx.id} className="border-b border-zinc-200 print:border-zinc-300 dark:border-zinc-800">
                         <td className="py-2 pr-4">{dateFmt.format(new Date(tx.date + "T12:00:00"))}</td>
                         <td className="py-2 pr-4 font-medium">{tx.merchant}</td>
                         <td className="py-2 pr-4 text-right font-medium">{money.format(absAmt)}</td>
                         <td className="py-2 text-right text-zinc-600 dark:text-zinc-400 print:text-zinc-800">
-                          {tx.paymentMethodName || "Unknown"}
+                          {paymentMethodStr}
                         </td>
                       </tr>
                     );
