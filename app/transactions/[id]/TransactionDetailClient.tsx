@@ -44,6 +44,7 @@ export function TransactionDetailClient({ id }: Props) {
 
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [togglingAdvance, setTogglingAdvance] = useState(false);
 
   const tx = transactions.find((t) => t.id === id);
 
@@ -275,14 +276,29 @@ export function TransactionDetailClient({ id }: Props) {
         <ToggleRow
           label="Advance Payment for Expenses"
           pressed={tx.category === "advance"}
+          disabled={togglingAdvance}
           onToggle={async () => {
-             if (tx.category === "advance") {
-                await clearCategory(id);
-             } else {
-                await setCategory(id, "advance");
-                await setReimbursementBilled(id, true);
-                await setReimbursementPaid(id, true);
+             setTogglingAdvance(true);
+             const supabase = createClient();
+             if (!supabase) {
+                alert("Database context missing.");
+                setTogglingAdvance(false);
+                return;
              }
+             
+             if (tx.category === "advance") {
+                const { error: clrErr } = await clearCategory(id);
+                if (clrErr) alert(`Failed to clear advance: ${clrErr}`);
+             } else {
+                const { error: updErr } = await supabase.from("transactions").update({
+                   category: "advance",
+                   reimbursement_billed: true,
+                   reimbursement_paid: true
+                }).eq("id", id);
+                if (updErr) alert(`Database error: ${updErr.message}`);
+                await refresh();
+             }
+             setTogglingAdvance(false);
           }}
         />
         
@@ -332,13 +348,15 @@ function ToggleRow({
   label,
   pressed,
   onToggle,
+  disabled
 }: {
   label: string;
   pressed: boolean;
   onToggle: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <div className="flex flex-1 items-center justify-between gap-4 rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-700">
+    <div className={`flex flex-1 items-center justify-between gap-4 rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-700 ${disabled ? "opacity-60" : ""}`}>
       <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
         {label}
       </span>
@@ -347,11 +365,12 @@ function ToggleRow({
         role="switch"
         aria-checked={pressed}
         onClick={onToggle}
+        disabled={disabled}
         className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${
           pressed
             ? "bg-emerald-600 dark:bg-emerald-500"
             : "bg-zinc-300 dark:bg-zinc-600"
-        }`}
+        } ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
       >
         <span
           className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-transform ${
