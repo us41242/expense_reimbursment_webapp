@@ -196,7 +196,7 @@ function TransactionsListContent() {
                       if (!val) void clearCategory(tx.id);
                       else void setCategory(tx.id, val as ExpenseCategory);
                     }}
-                    className="w-full sm:max-w-[180px] appearance-none truncate rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-base font-semibold text-zinc-800 shadow-sm transition hover:border-zinc-300 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-600 dark:focus:border-emerald-400"
+                    className="w-full sm:max-w-[180px] appearance-none truncate rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-xl sm:text-base font-semibold text-zinc-800 shadow-sm transition hover:border-zinc-300 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-600 dark:focus:border-emerald-400"
                   >
                     <option value="">Uncategorized</option>
                     <option value="personal">Personal</option>

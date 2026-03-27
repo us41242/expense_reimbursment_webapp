@@ -494,7 +494,7 @@ function AdvanceSettings({ tx, transactions, refresh, submitting, setTogglingAdv
             <Plus className="h-4 w-4" /> Add Split
           </button>
           
-          <button type="button" onClick={void saveSplits} disabled={submitting} className="flex items-center justify-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all">
+          <button type="button" onClick={saveSplits} disabled={submitting} className="flex items-center justify-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all">
             {submitting ? "Saving..." : "Move to Reimbursable Expenses"}
           </button>
         </div>
