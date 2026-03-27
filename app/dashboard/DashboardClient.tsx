@@ -83,7 +83,7 @@ export function DashboardClient() {
       label: "Uncategorized Queue",
       value: money.format(metrics.uncategorized),
       hint: "Total amount uncategorized",
-      href: "/uncategorized",
+      href: "/transactions?filter=uncategorized&sort=oldest",
     },
     {
       label: "Reimbursement Pending",

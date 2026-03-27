@@ -3,7 +3,8 @@
 import { useTransactions } from "@/context/TransactionContext";
 import type { ExpenseCategory } from "@/lib/types";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -24,10 +25,19 @@ function getCardIcon(name: string | null) {
   return null;
 }
 
-export function TransactionsListClient() {
+function TransactionsListContent() {
   const { transactions, hydrated, configMissing, signedIn, setCategory, clearCategory } = useTransactions();
+  const searchParams = useSearchParams();
 
   const [filter, setFilter] = useState<"all" | "uncategorized" | "categorized">("all");
+  const [sort, setSort] = useState<"newest" | "oldest">("newest");
+
+  // Read initial params
+  useEffect(() => {
+    const f = searchParams.get("filter");
+    if (f === "uncategorized" || f === "categorized") setFilter(f);
+    if (searchParams.get("sort") === "oldest") setSort("oldest");
+  }, [searchParams]);
 
   const sorted = [...transactions]
     .filter((t) => {
@@ -35,7 +45,10 @@ export function TransactionsListClient() {
       if (filter === "categorized") return !!t.category && t.category !== "research-needed";
       return true;
     })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort((a, b) => {
+      const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      return sort === "newest" ? diff : -diff;
+    });
 
   if (!hydrated) {
     return <p className="text-sm text-zinc-500">Loading…</p>;
@@ -60,20 +73,43 @@ export function TransactionsListClient() {
   return (
     <div className="space-y-6">
       {/* View Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        {(["all", "uncategorized", "categorized"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              filter === f
-                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-            }`}
-          >
-            {f === "all" ? "All Receipts" : f === "uncategorized" ? "Uncategorized" : "Completed"}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {(["all", "uncategorized", "categorized"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                filter === f
+                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              }`}
+            >
+              {f === "all" ? "All Receipts" : f === "uncategorized" ? "Uncategorized" : "Completed"}
+            </button>
+          ))}
+        </div>
+        
+        <button
+          onClick={() => setSort(s => s === "newest" ? "oldest" : "newest")}
+          className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400 dark:hover:bg-zinc-900"
+        >
+          {sort === "newest" ? (
+            <>
+              <span>Newest First</span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </>
+          ) : (
+            <>
+              <span>Oldest First</span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+              </svg>
+            </>
+          )}
+        </button>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -174,5 +210,13 @@ export function TransactionsListClient() {
       </div>
       </div>
     </div>
+  );
+}
+
+export function TransactionsListClient() {
+  return (
+    <Suspense fallback={<p className="text-sm text-zinc-500">Loading list…</p>}>
+      <TransactionsListContent />
+    </Suspense>
   );
 }
