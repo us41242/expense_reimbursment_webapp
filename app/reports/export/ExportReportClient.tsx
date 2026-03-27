@@ -113,15 +113,15 @@ export function ExportReportClient() {
         </div>
       </div>
 
-      <article className="print-report space-y-8 text-zinc-900 dark:text-zinc-50 print:text-black">
-        <header className="border-b border-zinc-200 pb-6 dark:border-zinc-800 print:border-zinc-300">
-          <h1 className="uppercase text-2xl font-bold tracking-tight text-zinc-900 dark:text-white print:text-2xl print:text-black">
+      <article className="print-report space-y-8 print:space-y-4 text-zinc-900 dark:text-zinc-50 print:text-black">
+        <header className="border-b border-zinc-200 pb-6 print:pb-2 dark:border-zinc-800 print:border-zinc-300">
+          <h1 className="uppercase text-2xl font-bold tracking-tight text-zinc-900 dark:text-white print:text-xl print:text-black">
             REIMBURSEMENT EXPENSE REPORT
           </h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 print:text-zinc-600">
+          <p className="mt-2 print:mt-1 text-sm text-zinc-600 dark:text-zinc-400 print:text-[10pt] print:text-zinc-800">
             Unpaid Reimbursable Business Expenses | Report Generated {dateFmt.format(new Date())}
           </p>
-          <p className="mt-4 text-lg font-semibold tabular-nums text-zinc-900 dark:text-white print:text-xl print:text-black">
+          <p className="mt-4 print:mt-1 text-lg font-semibold tabular-nums text-zinc-900 dark:text-white print:text-[11pt] print:text-black">
             Total {money.format(total)}
           </p>
         </header>
@@ -132,14 +132,14 @@ export function ExportReportClient() {
           </p>
         ) : (
           <>
-            <div className="font-sans text-[12pt] leading-tight print:text-black">
+            <div className="font-sans text-[12pt] leading-tight print:text-[10pt] print:leading-none print:text-black">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b-2 border-zinc-300 dark:border-zinc-700">
-                    <th className="py-2.5 pr-4 font-bold whitespace-nowrap">Date</th>
-                    <th className="py-2.5 pr-4 font-bold">Business / Description</th>
-                    <th className="py-2.5 pr-4 font-bold text-right whitespace-nowrap">Charge</th>
-                    <th className="py-2.5 font-bold text-right">Paid From</th>
+                    <th className="py-2.5 print:py-1 pr-4 font-bold whitespace-nowrap">Date</th>
+                    <th className="py-2.5 print:py-1 pr-4 font-bold">Business / Description</th>
+                    <th className="py-2.5 print:py-1 pr-4 font-bold text-right whitespace-nowrap">Charge</th>
+                    <th className="py-2.5 print:py-1 font-bold text-right">Paid From</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,10 +163,10 @@ export function ExportReportClient() {
 
                     return (
                       <tr key={tx.id} className="border-b border-zinc-200 print:border-zinc-300 dark:border-zinc-800">
-                        <td className="py-2 pr-4">{dateFmt.format(new Date(tx.date + "T12:00:00"))}</td>
-                        <td className="py-2 pr-4 font-medium">{tx.merchant}</td>
-                        <td className="py-2 pr-4 text-right font-medium">{money.format(absAmt)}</td>
-                        <td className="py-2 text-right text-zinc-600 dark:text-zinc-400 print:text-zinc-800">
+                        <td className="py-2 print:py-0.5 pr-4">{dateFmt.format(new Date(tx.date + "T12:00:00"))}</td>
+                        <td className="py-2 print:py-0.5 pr-4 font-medium">{tx.merchant}</td>
+                        <td className="py-2 print:py-0.5 pr-4 text-right font-medium">{money.format(absAmt)}</td>
+                        <td className="py-2 print:py-0.5 text-right text-zinc-600 dark:text-zinc-400 print:text-zinc-800">
                           {paymentMethodStr}
                         </td>
                       </tr>
