@@ -63,7 +63,8 @@ function isExpenseCategory(c: string): c is ExpenseCategory {
     c === "personal" ||
     c === "reimbursable" ||
     c === "non-reimbursable" ||
-    c === "research-needed"
+    c === "research-needed" ||
+    c === "advance"
   );
 }
 
