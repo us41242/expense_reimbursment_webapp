@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Teller Token Harvester</title>
+    <script src="https://cdn.teller.io/connect/connect.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #f0f2f5;
+            color: #1c1e21;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 450px;
+        }
+
+        #token-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff9db;
+            border: 1px solid #fab005;
+            border-radius: 8px;
+            display: none;
+            text-align: left;
+        }
+
+        code {
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .status-msg {
+            margin-top: 10px;
+            color: #28a745;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>Teller Dev Portal</h2>
+        <p>Link your bank to generate a permanent token.</p>
+        <button id="connect-button">Launch Teller Connect</button>
+
+        <div id="status-msg" class="status-msg">✓ Token Saved to Downloads</div>
+
+        <div id="token-display">
+            <strong>Enrollment Successful!</strong><br><br>
+            <small>Access Token:</small><br>
+            <code id="token-value"></code><br><br>
+            <small>Enrollment ID:</small><br>
+            <code id="enrollment-id"></code>
+        </div>
+    </div>
+
+    <script>
+        // Helper function to trigger the file download
+        function downloadToken(token, enrollmentId) {
+            const timestamp = new Date().toLocaleString();
+            const content = `TELLER ACCESS TOKEN\n-------------------\nDate: ${timestamp}\nToken: ${token}\nEnrollment ID: ${enrollmentId}\n\nKeep this file secure!`;
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+
+            a.href = url;
+            a.download = `teller-token-${new Date().getTime()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        var tellerConnect = TellerConnect.setup({
+            applicationId: "app_pq9h4pqr2bv1virlra000",
+            environment: "development",
+            onSuccess: function (enrollment) {
+                // 1. Display on screen
+                document.getElementById('token-display').style.display = 'block';
+                document.getElementById('token-value').innerText = enrollment.accessToken;
+                document.getElementById('enrollment-id').innerText = enrollment.enrollment.id;
+                document.getElementById('status-msg').style.display = 'block';
+
+                // 2. Automatically trigger the download
+                downloadToken(enrollment.accessToken, enrollment.enrollment.id);
+            },
+            onExit: function () {
+                console.log("User exited the flow.");
+            }
+        });
+
+        document.getElementById('connect-button').addEventListener('click', function () {
+            tellerConnect.open();
+        });
+    </script>
+</body>
+
+</html>

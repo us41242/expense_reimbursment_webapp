@@ -12,7 +12,6 @@ const nav = [
   { href: "/transactions?filter=uncategorized&sort=oldest", label: "List View", icon: ListTodo },
   { href: "/transactions", label: "Receipts", icon: Receipt },
   { href: "/reports", label: "Reports", icon: PieChart },
-  { href: "/banks", label: "Bank Accounts", icon: Landmark },
 ] as const;
 
 export function Sidebar() {

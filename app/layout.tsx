@@ -35,9 +35,6 @@ export default function RootLayout({
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
-        
-        {/* Globally load Teller Connect synchronously before app logic blocks occur */}
-        <Script src="https://cdn.teller.io/connect/connect.js" strategy="beforeInteractive" />
       </body>
     </html>
   );
