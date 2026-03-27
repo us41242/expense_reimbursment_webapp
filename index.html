@@ -1,69 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Teller Token Harvester</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teller x Supabase Link Tester</title>
     <script src="https://cdn.teller.io/connect/connect.js"></script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            background: #f0f2f5;
-            color: #1c1e21;
+            min-height: 100vh;
+            background-color: #f9fafb;
+            margin: 0;
+            color: #111827;
         }
 
-        .card {
+        .container {
             background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 480px;
             text-align: center;
-            max-width: 450px;
         }
 
-        #token-display {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fff9db;
-            border: 1px solid #fab005;
-            border-radius: 8px;
-            display: none;
-            text-align: left;
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
         }
 
-        code {
-            background: #eee;
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.9em;
-            word-break: break-all;
+        p {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .user-badge {
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            border: 1px solid #dbeafe;
         }
 
         button {
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            background: #007bff;
+            background-color: #2563eb;
             color: white;
             border: none;
-            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
             transition: background 0.2s;
+            width: 100%;
         }
 
         button:hover {
-            background: #0056b3;
+            background-color: #1d4ed8;
         }
 
-        .status-msg {
-            margin-top: 10px;
-            color: #28a745;
+        #results {
+            margin-top: 2rem;
+            text-align: left;
+            display: none;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1.5rem;
+        }
+
+        .label {
+            font-size: 0.75rem;
             font-weight: bold;
+            color: #9ca3af;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .value {
+            background: #f3f4f6;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .success-msg {
+            color: #059669;
+            font-weight: 600;
+            margin-bottom: 1rem;
             display: none;
         }
     </style>
@@ -71,60 +107,78 @@
 
 <body>
 
-    <div class="card">
-        <h2>Teller Dev Portal</h2>
-        <p>Link your bank to generate a permanent token.</p>
-        <button id="connect-button">Launch Teller Connect</button>
+    <div class="container">
+        <div class="user-badge">User: 2d71f2fb...ce52</div>
+        <h1>Link Bank Account</h1>
+        <p>This will connect your bank data to your Supabase profile in the Development environment.</p>
 
-        <div id="status-msg" class="status-msg">✓ Token Saved to Downloads</div>
+        <button id="teller-connect-btn">Connect Bank with Teller</button>
 
-        <div id="token-display">
-            <strong>Enrollment Successful!</strong><br><br>
-            <small>Access Token:</small><br>
-            <code id="token-value"></code><br><br>
-            <small>Enrollment ID:</small><br>
-            <code id="enrollment-id"></code>
+        <div id="results">
+            <div id="api-status" class="success-msg">✓ Data sent to Supabase API</div>
+            <div class="label">Access Token</div>
+            <div id="token-val" class="value"></div>
+            <div class="label">Enrollment ID</div>
+            <div id="enrollment-val" class="value"></div>
         </div>
     </div>
 
     <script>
-        // Helper function to trigger the file download
-        function downloadToken(token, enrollmentId) {
-            const timestamp = new Date().toLocaleString();
-            const content = `TELLER ACCESS TOKEN\n-------------------\nDate: ${timestamp}\nToken: ${token}\nEnrollment ID: ${enrollmentId}\n\nKeep this file secure!`;
+        const SUPABASE_USER_ID = "2d71f2fb-d40b-4b29-89f3-f7e61ae8ce52";
+        const TELLER_APP_ID = "app_pq9h4pqr2bv1virlra000";
 
+        // Helper: Trigger file download for backup
+        function backupToTextFile(token, enrollmentId, institution) {
+            const content = `TELLER LINK SUCCESS\nUser ID: ${SUPABASE_USER_ID}\nInstitution: ${institution}\nToken: ${token}\nEnrollment: ${enrollmentId}\nDate: ${new Date().toISOString()}`;
             const blob = new Blob([content], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-
             a.href = url;
-            a.download = `teller-token-${new Date().getTime()}.txt`;
-            document.body.appendChild(a);
+            a.download = `teller-auth-${institution.toLowerCase()}-${new Date().getTime()}.txt`;
             a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
         }
 
-        var tellerConnect = TellerConnect.setup({
-            applicationId: "app_pq9h4pqr2bv1virlra000",
+        const teller = TellerConnect.setup({
+            applicationId: TELLER_APP_ID,
             environment: "development",
             onSuccess: function (enrollment) {
-                // 1. Display on screen
-                document.getElementById('token-display').style.display = 'block';
-                document.getElementById('token-value').innerText = enrollment.accessToken;
-                document.getElementById('enrollment-id').innerText = enrollment.enrollment.id;
-                document.getElementById('status-msg').style.display = 'block';
+                console.log("Teller Success:", enrollment);
 
-                // 2. Automatically trigger the download
-                downloadToken(enrollment.accessToken, enrollment.enrollment.id);
+                // 1. Show results on screen
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('token-val').innerText = enrollment.accessToken;
+                document.getElementById('enrollment-val').innerText = enrollment.enrollment.id;
+
+                // 2. Backup to Downloads folder
+                backupToTextFile(
+                    enrollment.accessToken,
+                    enrollment.enrollment.id,
+                    enrollment.enrollment.institution.name
+                );
+
+                // 3. Attempt to save to your Next.js / Supabase API
+                fetch('/api/webhooks/save-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: SUPABASE_USER_ID,
+                        accessToken: enrollment.accessToken,
+                        enrollmentId: enrollment.enrollment.id,
+                        institutionName: enrollment.enrollment.institution.name
+                    })
+                })
+                    .then(res => {
+                        if (res.ok) document.getElementById('api-status').style.display = 'block';
+                    })
+                    .catch(err => console.error("Could not reach API. Check if your dev server is running.", err));
             },
             onExit: function () {
-                console.log("User exited the flow.");
+                console.log("User closed Teller Connect");
             }
         });
 
-        document.getElementById('connect-button').addEventListener('click', function () {
-            tellerConnect.open();
+        document.getElementById('teller-connect-btn').addEventListener('click', function () {
+            teller.open();
         });
     </script>
 </body>
