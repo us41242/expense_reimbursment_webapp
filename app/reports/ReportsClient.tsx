@@ -25,7 +25,7 @@ export function ReportsClient() {
     batchUpdateReimbursements,
   } = useTransactions();
 
-  const [activeTab, setActiveTab] = useState<"unbilled" | "billed" | "paid">("unbilled");
+  const [activeTab, setActiveTab] = useState<"unbilled" | "billed" | "paid" | "advances">("unbilled");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const unbilledTxs = useMemo(
@@ -52,12 +52,25 @@ export function ReportsClient() {
     [transactions],
   );
 
+  const advanceTxs = useMemo(
+    () =>
+      transactions
+        .filter((t) => t.category === "advance")
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [transactions],
+  );
+
   const activeTxs =
     activeTab === "unbilled"
       ? unbilledTxs
       : activeTab === "billed"
       ? billedTxs
-      : paidTxs;
+      : activeTab === "paid"
+      ? paidTxs
+      : advanceTxs;
+      
+  const totalAdvances = advanceTxs.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const totalUnbilledRaw = unbilledTxs.reduce((sum, t) => sum + t.amount, 0);
 
   const handleBatchBilled = async () => {
     if (unbilledTxs.length === 0) return;
@@ -101,7 +114,7 @@ export function ReportsClient() {
         <div className="flex w-full overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900/60 md:w-auto">
           <button
             onClick={() => setActiveTab("unbilled")}
-            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+            className={`flex-1 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all ${
               activeTab === "unbilled"
                 ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
                 : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -111,7 +124,7 @@ export function ReportsClient() {
           </button>
           <button
             onClick={() => setActiveTab("billed")}
-            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+            className={`flex-1 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all ${
               activeTab === "billed"
                 ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
                 : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -121,7 +134,7 @@ export function ReportsClient() {
           </button>
           <button
             onClick={() => setActiveTab("paid")}
-            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+            className={`flex-1 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all ${
               activeTab === "paid"
                 ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
                 : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -129,15 +142,37 @@ export function ReportsClient() {
           >
             Paid ({paidTxs.length})
           </button>
+          <button
+            onClick={() => setActiveTab("advances")}
+            className={`flex-1 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all ${
+              activeTab === "advances"
+                ? "bg-emerald-100 text-emerald-900 shadow-sm dark:bg-emerald-900/30 dark:text-emerald-100"
+                : "text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
+            }`}
+          >
+            Advances
+          </button>
         </div>
 
         <Link
           href="/reports/export"
-          className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:focus:ring-offset-zinc-900"
+          className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:focus:ring-offset-zinc-900 whitespace-nowrap"
         >
           Export current view
         </Link>
       </div>
+
+      {totalAdvances > 0 && activeTab === "unbilled" && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+          <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-400">Credited Balance Applied</h3>
+          <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-500 font-medium">
+            You have <span className="font-bold underline tabular-nums decoration-emerald-500/30 underline-offset-2">{money.format(totalAdvances)}</span> in manual lifecycle advances securely offsetting your global ledger. 
+            <br className="sm:hidden" />
+            <span className="hidden sm:inline"> </span>
+            Your raw unbilled total without this credit would be {money.format(totalUnbilledRaw)}.
+          </p>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
         <div className="flex flex-col">
@@ -226,8 +261,8 @@ function ReportRow({ tx }: { tx: Transaction }) {
 
       <div className="flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800 sm:border-0 sm:pt-0">
         <span className="text-sm font-medium text-zinc-500 sm:hidden">Amount</span>
-        <span className="text-lg font-bold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[15px]">
-          {money.format(tx.amount)}
+        <span className={`text-lg font-bold tabular-nums tracking-tight sm:text-[15px] ${tx.amount < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
+          {tx.amount < 0 ? `+${money.format(Math.abs(tx.amount))}` : money.format(tx.amount)}
         </span>
       </div>
     </div>
