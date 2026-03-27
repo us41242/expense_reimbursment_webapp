@@ -42,62 +42,65 @@ export default function NewAdvancePage() {
     if (!baseAmount || baseAmount <= 0) return alert("Please enter a valid advance amount.");
 
     setIsSubmitting(true);
-    const supabase = createClient();
-    
-    if (!supabase) {
-      alert("Database configuration missing.");
-      setIsSubmitting(false);
-      return;
-    }
+    console.log("Starting advance submission. Amount:", baseAmount);
 
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) {
-      alert("You must be signed in.");
-      setIsSubmitting(false);
-      return;
-    }
+    try {
+      const supabase = createClient();
+      if (!supabase) throw new Error("Database configuration missing.");
 
-    const payload = [];
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      if (authError || !userData?.user) throw new Error("You must be signed in. Please log in again.");
 
-    // 1. Advance transaction (negative amount)
-    payload.push({
-      user_id: userData.user.id,
-      amount: -baseAmount,
-      date,
-      merchant: advanceNote || "Advance Received",
-      category: "advance",
-      reimbursement_billed: true, // Auto-mark advances as completed states
-      reimbursement_paid: true,
-      payment_method_id: null,
-    });
+      const payload = [];
 
-    // 2. Team payouts as new reinstatable expenses
-    payouts.forEach((p) => {
-      const payoutVal = parseFloat(p.amount);
-      if (payoutVal && payoutVal > 0) {
-        payload.push({
-          user_id: userData.user.id,
-          amount: payoutVal,
-          date,
-          merchant: p.name ? `Team Payout: ${p.name}` : "Team Payout",
-          category: "reimbursable",
-          reimbursement_billed: false, 
-          reimbursement_paid: false,
-          payment_method_id: null,
-        });
+      // 1. Advance transaction (negative amount)
+      payload.push({
+        user_id: userData.user.id,
+        amount: -baseAmount,
+        date,
+        merchant: advanceNote || "Advance Received",
+        category: "advance",
+        reimbursement_billed: true, 
+        reimbursement_paid: true,
+        payment_method_id: null,
+      });
+
+      // 2. Team payouts as new reinstatable expenses
+      payouts.forEach((p) => {
+        const payoutVal = parseFloat(p.amount);
+        if (payoutVal && payoutVal > 0) {
+          payload.push({
+            user_id: userData.user.id,
+            amount: payoutVal,
+            date,
+            merchant: p.name ? `Team Payout: ${p.name}` : "Team Payout",
+            category: "reimbursable",
+            reimbursement_billed: false, 
+            reimbursement_paid: false,
+            payment_method_id: null,
+          });
+        }
+      });
+
+      console.log("Preparing to insert payload:", payload);
+      const { error: insertError } = await supabase.from("transactions").insert(payload);
+
+      if (insertError) {
+        throw new Error(`Database Error: ${insertError.message}`);
       }
-    });
-
-    const { error } = await supabase.from("transactions").insert(payload);
-
-    if (error) {
-      alert(`Error saving advance: ${error.message}`);
-    } else {
+      
+      console.log("Insert successful. Refreshing global transaction state...");
       await refresh();
+      
+      console.log("Routing back to dashboard...");
       router.push("/dashboard");
+
+    } catch (err: any) {
+      console.error("Advance persistence failed:", err);
+      alert(err.message || "An unexpected error occurred while saving.");
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
   return (
