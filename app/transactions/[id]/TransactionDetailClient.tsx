@@ -47,7 +47,7 @@ export function TransactionDetailClient({ id }: Props) {
   const [togglingAdvance, setTogglingAdvance] = useState(false);
 
   const tx = transactions.find((t) => t.id === id);
-  const [isAdvanceEditorOpen, setIsAdvanceEditorOpen] = useState(tx?.category === "advance");
+  const [isAdvanceEditorOpen, setIsAdvanceEditorOpen] = useState(tx?.notes?.includes("[Advance Payment]") || false);
 
   const onFile = useCallback(
     async (file: File) => {
@@ -286,7 +286,7 @@ export function TransactionDetailClient({ id }: Props) {
         )}
       </section>
 
-      {reimbursable && !isAdvanceEditorOpen ? (
+      {reimbursable && !isAdvanceEditorOpen && !tx.notes?.includes("[Advance Payment]") ? (
         <section
           aria-labelledby="reimbursement-heading"
           className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/60"
@@ -374,7 +374,7 @@ function AdvanceSettings({ tx, transactions, refresh, submitting, setTogglingAdv
   // Calculate UID
   const sameDayAdvances = useMemo(() => {
     return transactions
-      .filter(t => t.category === "advance" && t.date === tx.date)
+      .filter(t => t.notes?.includes("[Advance Payment]") && t.date === tx.date)
       .sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [transactions, tx.date]);
   
@@ -424,7 +424,8 @@ function AdvanceSettings({ tx, transactions, refresh, submitting, setTogglingAdv
 
     // 2. Update the Parent Transaction to push it purely into Unbilled
     const { error: parentErr } = await supabase.from("transactions").update({
-      category: "advance",
+      category: "reimbursable",
+      notes: tx.notes?.includes("[Advance Payment]") ? tx.notes : `[Advance Payment] ${tx.notes || ""}`.trim(),
       reimbursement_billed: false,
       reimbursement_paid: false,
       payment_method_id: null

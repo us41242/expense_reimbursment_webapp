@@ -146,7 +146,7 @@ function TransactionsListContent() {
                           className="flex h-full w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800 transition hover:opacity-80"
                         >
                           {(() => {
-                            const isWireTransfer = tx.category === "advance" || tx.merchant.startsWith("Payout from");
+                            const isWireTransfer = tx.notes?.includes("[Advance Payment]") || tx.merchant.startsWith("Payout from");
                             if (isWireTransfer) {
                               /* eslint-disable-next-line @next/next/no-img-element */
                               return <img src="/cards/Wire Transfer Icon.png" alt="Wire Transfer" className="h-full w-full object-cover" />;
@@ -203,7 +203,6 @@ function TransactionsListContent() {
                     <option value="reimbursable">Reimbursable</option>
                     <option value="non-reimbursable">Non-Reimbursable</option>
                     <option value="research-needed">Research Needed</option>
-                    <option value="advance">Advance Payment</option>
                   </select>
 
                   <span className="text-lg font-bold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[15px]">

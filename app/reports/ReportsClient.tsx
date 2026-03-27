@@ -31,7 +31,7 @@ export function ReportsClient() {
   const unbilledTxs = useMemo(
     () =>
       transactions
-        .filter((t) => (t.category === "reimbursable" || t.category === "advance") && !t.reimbursementBilled && !t.reimbursementPaid)
+        .filter((t) => t.category === "reimbursable" && !t.reimbursementBilled && !t.reimbursementPaid)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
@@ -193,7 +193,7 @@ function ReportRow({ tx }: { tx: Transaction }) {
       <div className="flex items-center gap-4">
         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
           {(() => {
-            const isWireTransfer = tx.category === "advance" || tx.merchant.startsWith("Payout from");
+            const isWireTransfer = tx.notes?.includes("[Advance Payment]") || tx.merchant.startsWith("Payout from");
             if (isWireTransfer) {
               return (
                 <Link href={`/transactions/${tx.id}`}>
