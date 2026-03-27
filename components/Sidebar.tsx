@@ -4,14 +4,13 @@ import { useTransactions } from "@/context/TransactionContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X, LayoutDashboard, FolderKanban, Receipt, PieChart, Landmark, ListTodo, Wallet } from "lucide-react";
+import { Menu, X, LayoutDashboard, FolderKanban, Receipt, PieChart, Landmark, ListTodo } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/uncategorized", label: "Uncategorized", icon: FolderKanban },
   { href: "/transactions?filter=uncategorized&sort=oldest", label: "List View", icon: ListTodo },
   { href: "/transactions", label: "Receipts", icon: Receipt },
-  { href: "/advances/new", label: "Log Advance", icon: Wallet },
   { href: "/reports", label: "Reports", icon: PieChart },
   { href: "/banks", label: "Bank Accounts", icon: Landmark },
 ] as const;

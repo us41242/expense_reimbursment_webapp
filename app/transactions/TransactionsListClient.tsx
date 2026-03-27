@@ -5,6 +5,7 @@ import type { ExpenseCategory } from "@/lib/types";
 import Link from "next/link";
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { ArrowRightLeft } from "lucide-react";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -145,6 +146,9 @@ function TransactionsListContent() {
                           className="flex h-full w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800 transition hover:opacity-80"
                         >
                           {(() => {
+                            if (tx.category === "advance") {
+                              return <ArrowRightLeft className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />;
+                            }
                             const iconUrl = getCardIcon(tx.paymentMethodName);
                             if (iconUrl) {
                               /* eslint-disable-next-line @next/next/no-img-element */

@@ -3,7 +3,10 @@
 import { useTransactions } from "@/context/TransactionContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useMemo } from "react";
+import { Plus, Check, Trash2, ArrowRightLeft } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import type { Transaction } from "@/lib/types";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -34,6 +37,9 @@ export function TransactionDetailClient({ id }: Props) {
     setReimbursementBilled,
     setReimbursementPaid,
     setTransactionNote,
+    setCategory,
+    clearCategory,
+    refresh,
   } = useTransactions();
 
   const [error, setError] = useState<string | null>(null);
@@ -264,6 +270,27 @@ export function TransactionDetailClient({ id }: Props) {
         </p>
       </section>
 
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/60">
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">Advance Payment</h2>
+        <ToggleRow
+          label="Advance Payment for Expenses"
+          pressed={tx.category === "advance"}
+          onToggle={async () => {
+             if (tx.category === "advance") {
+                await clearCategory(id);
+             } else {
+                await setCategory(id, "advance");
+                await setReimbursementBilled(id, true);
+                await setReimbursementPaid(id, true);
+             }
+          }}
+        />
+        
+        {tx.category === "advance" && (
+           <AdvanceSettings tx={tx} transactions={transactions} refresh={refresh} />
+        )}
+      </section>
+
       {reimbursable ? (
         <section
           aria-labelledby="reimbursement-heading"
@@ -335,6 +362,134 @@ function ToggleRow({
           {label}: {pressed ? "on" : "off"}
         </span>
       </button>
+    </div>
+  );
+}
+
+function AdvanceSettings({ tx, transactions, refresh }: { tx: Transaction; transactions: Transaction[]; refresh: () => Promise<void> }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [payouts, setPayouts] = useState<{ id: string; name: string; amount: string }[]>([
+    { id: crypto.randomUUID(), name: "", amount: "" }
+  ]);
+
+  const d = new Date(tx.date + "T12:00:00");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  
+  // Calculate UID
+  const sameDayAdvances = useMemo(() => {
+    return transactions
+      .filter(t => t.category === "advance" && t.date === tx.date)
+      .sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [transactions, tx.date]);
+  
+  const idx = useMemo(() => {
+    const foundIdx = sameDayAdvances.findIndex(t => t.id === tx.id);
+    return foundIdx >= 0 ? foundIdx + 1 : sameDayAdvances.length + 1;
+  }, [sameDayAdvances, tx.id]);
+
+  const uid = `${idx}${mm}${dd}`;
+
+  // Existing payouts
+  const savedPayouts = useMemo(() => {
+    return transactions.filter(t => t.merchant.startsWith(`Payout from ${uid}`));
+  }, [transactions, uid]);
+
+  const addPayout = () => {
+    setPayouts([...payouts, { id: crypto.randomUUID(), name: "", amount: "" }]);
+  };
+  const removePayout = (id: string) => {
+    setPayouts(payouts.filter(p => p.id !== id));
+  };
+  const updatePayout = (id: string, field: "name"|"amount", val: string) => {
+    setPayouts(payouts.map(p => p.id === id ? { ...p, [field]: val } : p));
+  };
+
+  const saveSplits = async () => {
+    const valid = payouts.filter(p => p.name && parseFloat(p.amount) > 0);
+    if (!valid.length) return alert("Add at least one valid payout split first.");
+    
+    setSubmitting(true);
+    const supabase = createClient();
+    if (!supabase) { setSubmitting(false); return alert("No database context."); }
+
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) { setSubmitting(false); return alert("Must be signed in."); }
+
+    const payload = valid.map(p => ({
+      user_id: userData.user.id,
+      amount: parseFloat(p.amount),
+      date: tx.date,
+      category: "reimbursable",
+      merchant: `Payout from ${uid} to ${p.name}`,
+      reimbursement_billed: false,
+      reimbursement_paid: false,
+      payment_method_id: null,
+    }));
+
+    const { error } = await supabase.from("transactions").insert(payload);
+    if (error) {
+      alert(`Error saving specific payout metrics: ${error.message}`);
+    } else {
+      setPayouts([]);
+      await refresh();
+    }
+    setSubmitting(false);
+  };
+
+  const totalRawAmount = Math.abs(tx.amount);
+
+  return (
+    <div className="mt-5 border-t border-zinc-200 dark:border-zinc-800 pt-5">
+      <div className="text-[13px] font-mono text-zinc-900 dark:text-zinc-100 flex items-center justify-between mb-4 bg-zinc-100 dark:bg-zinc-800 px-3 py-2 rounded-lg">
+        <span className="font-semibold">Payment {uid} Received</span>
+        <span className="font-bold">{money.format(totalRawAmount)}</span>
+      </div>
+      
+      {savedPayouts.length > 0 && (
+        <div className="space-y-2 font-mono text-[13px] text-zinc-600 dark:text-zinc-400 mb-6">
+          {savedPayouts.map(pt => (
+            <div key={pt.id} className="flex justify-between items-center rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-2 dark:border-emerald-900/30 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300">
+              <span className="truncate pr-4">{pt.merchant}</span>
+              <span className="font-medium">{money.format(pt.amount)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div>
+        <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-3">Did you use a portion of this payment to pay someone?</p>
+        <div className="space-y-3">
+          {payouts.map(p => (
+            <div key={p.id} className="flex items-center gap-2">
+              <input 
+                type="text" 
+                placeholder="Name" 
+                value={p.name} 
+                onChange={(e) => updatePayout(p.id, "name", e.target.value)} 
+                className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500" 
+              />
+              <input 
+                type="number" 
+                placeholder="$0.00" 
+                value={p.amount} 
+                onChange={(e) => updatePayout(p.id, "amount", e.target.value)} 
+                className="w-24 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500" 
+              />
+              <button type="button" onClick={() => removePayout(p.id)} className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><Trash2 className="h-4 w-4"/></button>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button type="button" onClick={addPayout} className="self-start flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
+            <Plus className="h-4 w-4" /> Add Split
+          </button>
+          
+          <button type="button" onClick={void saveSplits} disabled={submitting || payouts.every(p => !p.name)} className="flex items-center justify-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all">
+            {submitting ? "Saving..." : "Save Splits"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

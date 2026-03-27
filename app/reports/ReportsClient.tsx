@@ -25,7 +25,7 @@ export function ReportsClient() {
     batchUpdateReimbursements,
   } = useTransactions();
 
-  const [activeTab, setActiveTab] = useState<"unbilled" | "billed" | "paid" | "advances">("unbilled");
+  const [activeTab, setActiveTab] = useState<"unbilled" | "billed" | "paid">("unbilled");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const unbilledTxs = useMemo(
@@ -52,25 +52,12 @@ export function ReportsClient() {
     [transactions],
   );
 
-  const advanceTxs = useMemo(
-    () =>
-      transactions
-        .filter((t) => t.category === "advance")
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [transactions],
-  );
-
   const activeTxs =
     activeTab === "unbilled"
       ? unbilledTxs
       : activeTab === "billed"
       ? billedTxs
-      : activeTab === "paid"
-      ? paidTxs
-      : advanceTxs;
-      
-  const totalAdvances = advanceTxs.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-  const totalUnbilledRaw = unbilledTxs.reduce((sum, t) => sum + t.amount, 0);
+      : paidTxs;
 
   const handleBatchBilled = async () => {
     if (unbilledTxs.length === 0) return;
@@ -142,16 +129,6 @@ export function ReportsClient() {
           >
             Paid ({paidTxs.length})
           </button>
-          <button
-            onClick={() => setActiveTab("advances")}
-            className={`flex-1 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all ${
-              activeTab === "advances"
-                ? "bg-emerald-100 text-emerald-900 shadow-sm dark:bg-emerald-900/30 dark:text-emerald-100"
-                : "text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
-            }`}
-          >
-            Advances
-          </button>
         </div>
 
         <Link
@@ -161,18 +138,6 @@ export function ReportsClient() {
           Export current view
         </Link>
       </div>
-
-      {totalAdvances > 0 && activeTab === "unbilled" && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
-          <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-400">Credited Balance Applied</h3>
-          <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-500 font-medium">
-            You have <span className="font-bold underline tabular-nums decoration-emerald-500/30 underline-offset-2">{money.format(totalAdvances)}</span> in manual lifecycle advances securely offsetting your global ledger. 
-            <br className="sm:hidden" />
-            <span className="hidden sm:inline"> </span>
-            Your raw unbilled total without this credit would be {money.format(totalUnbilledRaw)}.
-          </p>
-        </div>
-      )}
 
       <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
         <div className="flex flex-col">
