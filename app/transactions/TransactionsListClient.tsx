@@ -118,7 +118,11 @@ function TransactionsListContent() {
         <div className="flex flex-col">
         {sorted.length === 0 ? (
           <div className="px-4 py-12 text-center text-zinc-500">
-            No transactions found.
+            {filter === "uncategorized" 
+              ? "All caught up! You have no uncategorized transactions." 
+              : filter === "categorized"
+                ? "You have no categorized transactions yet."
+                : "No transactions found."}
           </div>
         ) : (
           sorted.map((tx) => {

@@ -9,8 +9,8 @@ import { Menu, X, LayoutDashboard, FolderKanban, Receipt, PieChart, Landmark, Li
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/uncategorized", label: "Uncategorized", icon: FolderKanban },
-  { href: "/transactions?filter=uncategorized&sort=oldest", label: "List View", icon: ListTodo },
-  { href: "/transactions", label: "Receipts", icon: Receipt },
+  { href: "/transactions?filter=uncategorized&sort=oldest", label: "Uncategorized List", icon: ListTodo },
+  { href: "/transactions", label: "All Transactions", icon: Receipt },
   { href: "/reports", label: "Reports", icon: PieChart },
 ] as const;
 
