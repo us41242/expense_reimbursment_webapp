@@ -40,6 +40,12 @@ export async function GET() {
         const accountLabel = account.name || account.subtype || account.type || account.id;
         const pmName = `${conn.institution_name} ${accountLabel}`;
 
+        // Skip the individual employee card to prevent duplicate syncing
+        if (pmName.toLowerCase().includes('altinay')) {
+          console.log(`[Teller] Skipping redundant employee card: ${pmName}`);
+          continue;
+        }
+
         // Find or create a payment method for this specific account
         let paymentMethodId: string | null = null;
         const { data: existingPm } = await supabase
@@ -77,17 +83,41 @@ export async function GET() {
         console.log(`[Teller] ${conn.institution_name} / ${accountLabel}: ${transactions.length} transaction(s)`);
         if (!transactions.length) continue;
 
-        const formattedData = transactions.map((t: any) => ({
-          user_id: conn.user_id,
-          amount: parseFloat(t.amount),
-          date: t.date,
-          merchant: t.description,
-          teller_transaction_id: t.id,
-          teller_account_id: t.account_id,
-          status: t.status,
-          iso_currency_code: 'USD',
-          payment_method_id: paymentMethodId,
-        }));
+        const formattedData = transactions.map((t: any) => {
+          const amount = parseFloat(t.amount);
+          
+          let category: string | null = 'personal'; // Default to personal
+          
+          // If it's a credit, keep it personal
+          if (amount >= 0) {
+            const ranges = [
+              { start: '2026-01-23', end: '2026-01-30' },
+              { start: '2026-02-12', end: '2026-02-20' },
+              { start: '2026-02-25', end: '2026-02-27' },
+              { start: '2026-02-28', end: '2026-03-16' }, // Merged
+              { start: '2026-03-19', end: '2026-03-26' },
+            ];
+            
+            // Reimbursable if the transaction date falls in a range
+            const isReimbursable = ranges.some(r => t.date >= r.start && t.date <= r.end);
+            if (isReimbursable) {
+              category = 'reimbursable';
+            }
+          }
+
+          return {
+            user_id: conn.user_id,
+            amount,
+            date: t.date,
+            merchant: t.description,
+            teller_transaction_id: t.id,
+            teller_account_id: t.account_id,
+            status: t.status,
+            category,
+            iso_currency_code: 'USD',
+            payment_method_id: paymentMethodId,
+          };
+        });
 
         // UPSERT — inserts new rows, skips duplicates by teller_transaction_id
         const { error: upsertError } = await supabase

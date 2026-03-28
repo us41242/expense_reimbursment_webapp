@@ -206,8 +206,8 @@ function TransactionsListContent() {
                     <option value="research-needed">Research Needed</option>
                   </select>
 
-                  <span className="text-lg font-bold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[15px]">
-                    {money.format(tx.amount)}
+                  <span className={`text-lg font-bold tabular-nums tracking-tight sm:text-[15px] ${tx.amount < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
+                    {tx.amount < 0 ? `(Credit) ${money.format(Math.abs(tx.amount))}` : money.format(tx.amount)}
                   </span>
                 </div>
               </div>
