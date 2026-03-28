@@ -34,7 +34,7 @@ const ranges = [
 async function main() {
   console.log(`Fetching all transactions to categorize...`);
   
-  const res = await fetch(`${url}/rest/v1/transactions?user_id=eq.${USER_ID}&select=id,amount,date`, {
+  const res = await fetch(`${url}/rest/v1/transactions?user_id=eq.${USER_ID}&select=id,amount,date,payment_methods(name)`, {
     headers: {
       'apikey': key,
       'Authorization': `Bearer ${key}`
@@ -55,8 +55,12 @@ async function main() {
     let category = 'personal'; 
     const amount = Number(t.amount);
     
+    const pmName = (t.payment_methods?.name || '').toLowerCase();
+    const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
+    const isCredit = isDepository ? amount > 0 : amount < 0;
+
     // Ignore credits, they stay personal
-    if (amount >= 0) {
+    if (!isCredit) {
       const isReimbursable = ranges.some(r => t.date >= r.start && t.date <= r.end);
       if (isReimbursable) {
         category = 'reimbursable';

@@ -88,17 +88,20 @@ export async function GET() {
           
           let category: string | null = 'personal'; // Default to personal
           
-          // If it's a credit, keep it personal
-          if (amount >= 0) {
+          const pmName = (account.name || '').toLowerCase();
+          const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
+          const isCredit = isDepository ? amount > 0 : amount < 0;
+
+          // If it is an expense, check if it falls in the reimbursable dates
+          if (!isCredit) {
             const ranges = [
               { start: '2026-01-23', end: '2026-01-30' },
               { start: '2026-02-12', end: '2026-02-20' },
               { start: '2026-02-25', end: '2026-02-27' },
-              { start: '2026-02-28', end: '2026-03-16' }, // Merged
+              { start: '2026-02-28', end: '2026-03-16' },
               { start: '2026-03-19', end: '2026-03-26' },
             ];
             
-            // Reimbursable if the transaction date falls in a range
             const isReimbursable = ranges.some(r => t.date >= r.start && t.date <= r.end);
             if (isReimbursable) {
               category = 'reimbursable';
