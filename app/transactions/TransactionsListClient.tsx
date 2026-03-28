@@ -147,7 +147,12 @@ function TransactionsListContent() {
                           className="flex h-full w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800 transition hover:opacity-80"
                         >
                           {(() => {
-                            const isWireTransfer = tx.notes?.includes("[Advance Payment]") || tx.merchant.startsWith("Payout from");
+                            const isWireTransfer = 
+                              tx.notes?.includes("[Advance Payment]") || 
+                              tx.merchant.startsWith("Payout from") ||
+                              tx.merchant.toLowerCase().includes("direct deposit") ||
+                              tx.merchant.toLowerCase().includes("transfer");
+
                             if (isWireTransfer) {
                               /* eslint-disable-next-line @next/next/no-img-element */
                               return <img src="/cards/Wire Transfer Icon.png" alt="Wire Transfer" className="h-full w-full object-cover" />;

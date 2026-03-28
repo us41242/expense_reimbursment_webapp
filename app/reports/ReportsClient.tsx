@@ -193,7 +193,12 @@ function ReportRow({ tx }: { tx: Transaction }) {
       <div className="flex items-center gap-4">
         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
           {(() => {
-            const isWireTransfer = tx.notes?.includes("[Advance Payment]") || tx.merchant.startsWith("Payout from");
+            const isWireTransfer = 
+              tx.notes?.includes("[Advance Payment]") || 
+              tx.merchant.startsWith("Payout from") ||
+              tx.merchant.toLowerCase().includes("direct deposit") ||
+              tx.merchant.toLowerCase().includes("transfer");
+
             if (isWireTransfer) {
               return (
                 <Link href={`/transactions/${tx.id}`}>

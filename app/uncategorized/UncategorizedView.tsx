@@ -31,6 +31,16 @@ function TransactionCard({ tx }: { tx: Transaction }) {
   const d = useMemo(() => new Date(tx.date + "T12:00:00"), [tx.date]);
 
   const bgImage = useMemo(() => {
+    const isWireTransfer = 
+      tx.notes?.includes("[Advance Payment]") || 
+      tx.merchant.startsWith("Payout from") ||
+      tx.merchant.toLowerCase().includes("direct deposit") ||
+      tx.merchant.toLowerCase().includes("transfer");
+
+    if (isWireTransfer) {
+      return '/cards/Wire Transfer Icon.png';
+    }
+
     const name = tx.paymentMethodName?.toLowerCase() || '';
     if (name.includes('costco') || name.includes('citi')) {
       return '/cards/Citi Costco.png';
@@ -45,7 +55,7 @@ function TransactionCard({ tx }: { tx: Transaction }) {
       return '/cards/Chase Ink.png';
     }
     return '/blue-card.png';
-  }, [tx.paymentMethodName]);
+  }, [tx.paymentMethodName, tx.notes, tx.merchant]);
 
   return (
     <div className="relative flex w-full max-w-[400px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/40 bg-zinc-900 shadow-[0_0_15px_rgba(255,255,255,0.3)] dark:border-white/20 dark:shadow-[0_0_15px_rgba(255,255,255,0.15)] aspect-[1.586/1]">
