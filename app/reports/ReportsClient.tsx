@@ -16,6 +16,15 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
+function getCardIcon(name: string | null) {
+  const n = name?.toLowerCase() || '';
+  if (n.includes('costco') || n.includes('citi')) return '/cards/Citi Costco Icon.png';
+  if (n.includes('debit') || n.includes('bus complete chk') || n.includes('chk')) return '/cards/Chase Business Debit Icon.png';
+  if (n.includes('sav') || n.includes('total sav')) return '/cards/Chase Business Savings Icon.png';
+  if (n.includes('ink')) return '/cards/Chase Ink Icon.png';
+  return null;
+}
+
 export function ReportsClient() {
   const {
     hydrated,
@@ -215,6 +224,16 @@ function ReportRow({ tx }: { tx: Transaction }) {
                 </Link>
               );
             }
+            const iconUrl = getCardIcon(tx.paymentMethodName);
+            if (iconUrl) {
+              return (
+                <Link href={`/transactions/${tx.id}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={iconUrl} alt="Card" className="h-full w-full object-cover transition hover:opacity-80" />
+                </Link>
+              );
+            }
+            
             return (
               <Link href={`/transactions/${tx.id}`} className="flex h-full w-full items-center justify-center text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">
                 Add
