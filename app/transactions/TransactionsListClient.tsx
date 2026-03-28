@@ -31,13 +31,13 @@ function TransactionsListContent() {
   const { transactions, hydrated, configMissing, signedIn, setCategory, clearCategory } = useTransactions();
   const searchParams = useSearchParams();
 
-  const [filter, setFilter] = useState<"all" | "uncategorized" | "categorized">("all");
+  const [filter, setFilter] = useState<"all" | "uncategorized" | "categorized" | "reimbursable">("all");
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
 
   // Read initial params
   useEffect(() => {
     const f = searchParams.get("filter");
-    if (f === "uncategorized" || f === "categorized") setFilter(f);
+    if (f === "uncategorized" || f === "categorized" || f === "reimbursable") setFilter(f);
     if (searchParams.get("sort") === "oldest") setSort("oldest");
   }, [searchParams]);
 
@@ -45,6 +45,7 @@ function TransactionsListContent() {
     .filter((t) => {
       if (filter === "uncategorized") return !t.category || t.category === "research-needed";
       if (filter === "categorized") return !!t.category && t.category !== "research-needed";
+      if (filter === "reimbursable") return t.category === "reimbursable";
       return true;
     })
     .sort((a, b) => {
@@ -77,7 +78,7 @@ function TransactionsListContent() {
       {/* View Filters */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          {(["all", "uncategorized", "categorized"] as const).map((f) => (
+          {(["all", "uncategorized", "categorized", "reimbursable"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -87,7 +88,7 @@ function TransactionsListContent() {
                   : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
               }`}
             >
-              {f === "all" ? "All Receipts" : f === "uncategorized" ? "Uncategorized" : "Completed"}
+              {f === "all" ? "All Receipts" : f === "uncategorized" ? "Uncategorized" : f === "reimbursable" ? "Reimbursable" : "Completed"}
             </button>
           ))}
         </div>
@@ -122,6 +123,8 @@ function TransactionsListContent() {
               ? "All caught up! You have no uncategorized transactions." 
               : filter === "categorized"
                 ? "You have no categorized transactions yet."
+                : filter === "reimbursable"
+                  ? "You have no reimbursable transactions."
                 : "No transactions found."}
           </div>
         ) : (
