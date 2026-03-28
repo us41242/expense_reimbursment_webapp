@@ -1,32 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import https from 'https';
-
-// 1. Setup the mTLS Agent using your Vercel Environment Variables
-const getTellerAgent = () => {
-  const cert = process.env.TELLER_CERT_PEM;
-  const key = process.env.TELLER_KEY_PEM;
-
-  if (!cert || !key) {
-    console.error("Missing TELLER_CERT_PEM or TELLER_KEY_PEM in environment variables.");
-    return null;
-  }
-
-  return new https.Agent({ cert, key });
-};
+import { tellerFetch } from '@/lib/teller';
 
 export async function GET() {
   try {
-    const agent = getTellerAgent();
-    if (!agent) return NextResponse.json({ error: "mTLS setup failed" }, { status: 500 });
-
-    // 2. Initialize Supabase with Service Role (to bypass RLS for background sync)
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 3. Get all active bank connections
+    // 1. Get all active bank connections
     const { data: connections, error: connError } = await supabase
       .from('bank_connections')
       .select('*');
@@ -38,56 +21,94 @@ export async function GET() {
 
     let totalSynced = 0;
 
-    // 4. Loop through each bank and fetch transactions
-    for (const conn of connections) {
-      const authHeader = `Basic ${Buffer.from(conn.access_token + ':').toString('base64')}`;
-      
-      const response = await fetch('https://api.teller.io/transactions', {
-        headers: {
-          'Teller-Version': '2019-07-01',
-          'Authorization': authHeader
-        },
-        // @ts-ignore - https agent for server-side fetch
-        agent 
-      });
+    console.log(`[Sync] Found ${connections.length} bank connection(s):`, connections.map(c => c.institution_name));
 
-      if (!response.ok) {
-        console.error(`Failed to fetch for ${conn.institution_name}: ${response.statusText}`);
+    for (const conn of connections) {
+      // 2. Fetch all accounts under this enrollment (checking, savings, credit, etc.)
+      let accounts: any[];
+      try {
+        accounts = await tellerFetch('/accounts', conn.access_token);
+        console.log(`[Teller] ${conn.institution_name}: found ${accounts.length} account(s):`, accounts.map((a: any) => `${a.name} (${a.subtype})`));
+      } catch (err: any) {
+        console.error(`[Teller] Failed to fetch accounts for ${conn.institution_name}:`, err.message);
         continue;
       }
 
-      const transactions = await response.json();
+      // 3. For each account, ensure a payment method exists, then sync transactions
+      for (const account of accounts) {
+        // Build a human-readable name like "Chase Checking" or "Chase Credit Card"
+        const accountLabel = account.name || account.subtype || account.type || account.id;
+        const pmName = `${conn.institution_name} ${accountLabel}`;
 
-      // 5. Map Teller data to YOUR specific Supabase schema
-      const formattedData = transactions.map((t: any) => ({
-        user_id: conn.user_id,
-        amount: t.amount,
-        date: t.date,
-        merchant: t.description, // Teller calls it description, you call it merchant
-        teller_transaction_id: t.id,
-        teller_account_id: t.account_id,
-        status: t.status,
-        iso_currency_code: t.details?.currency_code || 'USD',
-        // We find the payment_method_id by looking for the one linked to this connection
-        payment_method_id: null // You can query this separately if needed
-      }));
+        // Find or create a payment method for this specific account
+        let paymentMethodId: string | null = null;
+        const { data: existingPm } = await supabase
+          .from('payment_methods')
+          .select('id')
+          .eq('user_id', conn.user_id)
+          .eq('name', pmName)
+          .maybeSingle();
 
-      // 6. UPSERT: This is the magic. It adds new ones and ignores duplicates.
-      const { error: upsertError } = await supabase
-        .from('transactions')
-        .upsert(formattedData, { onConflict: 'teller_transaction_id' });
+        if (existingPm) {
+          paymentMethodId = existingPm.id;
+        } else {
+          const { data: newPm, error: pmError } = await supabase
+            .from('payment_methods')
+            .insert({ user_id: conn.user_id, name: pmName, bank_connection_id: conn.id })
+            .select('id')
+            .single();
 
-      if (upsertError) console.error("Upsert Error:", upsertError);
-      totalSynced += transactions.length;
+          if (pmError) {
+            console.error(`[Supabase] Failed to create payment method for ${pmName}:`, pmError);
+          } else {
+            paymentMethodId = newPm.id;
+          }
+        }
+
+        // Fetch transactions for this account
+        let transactions: any[];
+        try {
+          transactions = await tellerFetch(`/accounts/${account.id}/transactions`, conn.access_token);
+        } catch (err: any) {
+          console.error(`[Teller] Failed to fetch transactions for account ${account.id} (${accountLabel}):`, err.message);
+          continue;
+        }
+
+        console.log(`[Teller] ${conn.institution_name} / ${accountLabel}: ${transactions.length} transaction(s)`);
+        if (!transactions.length) continue;
+
+        const formattedData = transactions.map((t: any) => ({
+          user_id: conn.user_id,
+          amount: parseFloat(t.amount),
+          date: t.date,
+          merchant: t.description,
+          teller_transaction_id: t.id,
+          teller_account_id: t.account_id,
+          status: t.status,
+          iso_currency_code: 'USD',
+          payment_method_id: paymentMethodId,
+        }));
+
+        // UPSERT — inserts new rows, skips duplicates by teller_transaction_id
+        const { error: upsertError } = await supabase
+          .from('transactions')
+          .upsert(formattedData, { onConflict: 'teller_transaction_id' });
+
+        if (upsertError) {
+          console.error(`[Supabase] Upsert error for account ${account.id}:`, upsertError);
+        } else {
+          totalSynced += transactions.length;
+        }
+      }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: `Sync complete. Processed ${totalSynced} transactions.` 
+    return NextResponse.json({
+      success: true,
+      message: `Sync complete. Processed ${totalSynced} transactions.`,
     });
 
   } catch (error: any) {
-    console.error("Sync Route Error:", error);
+    console.error('[Sync] Route error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

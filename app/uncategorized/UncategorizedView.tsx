@@ -7,9 +7,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const CATEGORY_ACTIONS: { category: ExpenseCategory; label: string }[] = [
-  { category: "personal", label: "Personal" },
-  { category: "reimbursable", label: "Reimbursable" },
-  { category: "non-reimbursable", label: "Non-Reimbursable" },
+  { category: "reimbursable", label: "Reimbursable Expenses" },
+  { category: "non-reimbursable", label: "EPIC Business Expenses" },
+  { category: "personal", label: "Personal Expenses" },
   { category: "research-needed", label: "Research Needed" },
 ];
 
@@ -35,8 +35,11 @@ function TransactionCard({ tx }: { tx: Transaction }) {
     if (name.includes('costco') || name.includes('citi')) {
       return '/cards/Citi Costco.png';
     }
-    if (name.includes('debit')) {
+    if (name.includes('debit') || name.includes('bus complete chk') || name.includes('chk')) {
       return '/cards/Chase Business Debit.png';
+    }
+    if (name.includes('sav') || name.includes('total sav')) {
+      return '/cards/Chase Business Savings.png';
     }
     if (name.includes('ink')) {
       return '/cards/Chase Ink.png';
@@ -261,7 +264,7 @@ export function UncategorizedView() {
                     href={`/transactions/${current.id}`}
                     className="text-[13px] font-semibold text-zinc-600 underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
                   >
-                    Add Receipt/Note
+                    Add Receipt | Split Charges
                   </Link>
                 </p>
               </motion.div>
@@ -292,14 +295,14 @@ export function UncategorizedView() {
       </motion.div>
 
       {/* Bottom half: Buttons */}
-      <div className="grid w-full max-w-[420px] grid-cols-2 gap-4 px-3 pb-2 sm:grid-cols-4 sm:px-0">
+      <div className="grid w-full max-w-[420px] grid-cols-1 gap-3 px-3 pb-2 sm:px-0">
         {CATEGORY_ACTIONS.map(({ category, label }) => (
           <button
             key={category}
             type="button"
             disabled={done}
             onClick={() => advance(category)}
-            className={`flex flex-col aspect-[1.35/1] sm:aspect-auto sm:min-h-[85px] items-center justify-center rounded-2xl border-[0.5px] p-2 text-center text-[13px] leading-tight tracking-wide font-semibold backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:active:scale-100 ${currentTheme}`}
+            className={`flex flex-col min-h-[60px] sm:min-h-[70px] items-center justify-center rounded-2xl border-[0.5px] p-2 text-center text-[15px] leading-tight tracking-[0.25em] font-bold backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:active:scale-100 ${currentTheme}`}
           >
             {label}
           </button>

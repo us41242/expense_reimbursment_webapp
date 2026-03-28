@@ -21,7 +21,8 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
 function getCardIcon(name: string | null) {
   const n = name?.toLowerCase() || '';
   if (n.includes('costco') || n.includes('citi')) return '/cards/Citi Costco Icon.png';
-  if (n.includes('debit')) return '/cards/Chase Business Debit Icon.png';
+  if (n.includes('debit') || n.includes('bus complete chk') || n.includes('chk')) return '/cards/Chase Business Debit Icon.png';
+  if (n.includes('sav') || n.includes('total sav')) return '/cards/Chase Business Savings Icon.png';
   if (n.includes('ink')) return '/cards/Chase Ink Icon.png';
   return null;
 }
