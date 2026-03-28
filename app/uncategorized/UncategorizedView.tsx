@@ -79,10 +79,18 @@ function TransactionCard({ tx }: { tx: Transaction }) {
         <p className="text-sm font-medium text-white/90 drop-shadow-sm">
           {dateFmt.format(d)}
         </p>
-        <p className={`mt-1 text-5xl font-bold tabular-nums tracking-tight drop-shadow-md ${tx.amount < 0 ? 'text-emerald-400' : 'text-white'}`}>
-          {tx.amount < 0 && <span className="text-xl mr-2 text-emerald-300 uppercase tracking-widest">(Credit)</span>}
-          {money.format(Math.abs(tx.amount))}
-        </p>
+        {(() => {
+          const pmName = (tx.paymentMethodName || '').toLowerCase();
+          const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
+          const isCredit = isDepository ? tx.amount > 0 : tx.amount < 0;
+
+          return (
+            <p className={`mt-1 text-5xl font-bold tabular-nums tracking-tight drop-shadow-md ${isCredit ? 'text-emerald-400' : 'text-white'}`}>
+              {isCredit && <span className="text-xl mr-2 text-emerald-300 uppercase tracking-widest">(Credit)</span>}
+              {money.format(Math.abs(tx.amount))}
+            </p>
+          );
+        })()}
         <p className="mt-4 text-center text-sm font-medium tracking-wide text-white/90 drop-shadow-sm">
           {tx.merchant}
         </p>

@@ -257,9 +257,17 @@ function ReportRow({ tx }: { tx: Transaction }) {
 
       <div className="flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800 sm:border-0 sm:pt-0">
         <span className="text-sm font-medium text-zinc-500 sm:hidden">Amount</span>
-        <span className={`text-lg font-bold tabular-nums tracking-tight sm:text-[15px] ${tx.amount < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
-          {tx.amount < 0 ? `+${money.format(Math.abs(tx.amount))}` : money.format(tx.amount)}
-        </span>
+        {(() => {
+          const pmName = (tx.paymentMethodName || '').toLowerCase();
+          const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
+          const isCredit = isDepository ? tx.amount > 0 : tx.amount < 0;
+
+          return (
+            <span className={`text-lg font-bold tabular-nums tracking-tight sm:text-[15px] ${isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
+              {isCredit ? `+${money.format(Math.abs(tx.amount))}` : money.format(Math.abs(tx.amount))}
+            </span>
+          );
+        })()}
       </div>
     </div>
   );

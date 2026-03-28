@@ -211,9 +211,17 @@ function TransactionsListContent() {
                     <option value="research-needed">Research Needed</option>
                   </select>
 
-                  <span className={`text-lg font-bold tabular-nums tracking-tight sm:text-[15px] ${tx.amount < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
-                    {tx.amount < 0 ? `(Credit) ${money.format(Math.abs(tx.amount))}` : money.format(tx.amount)}
-                  </span>
+                  {(() => {
+                    const pmName = (tx.paymentMethodName || '').toLowerCase();
+                    const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
+                    const isCredit = isDepository ? tx.amount > 0 : tx.amount < 0;
+                    
+                    return (
+                      <span className={`text-lg font-bold tabular-nums tracking-tight sm:text-[15px] ${isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
+                        {isCredit ? `(Credit) ${money.format(Math.abs(tx.amount))}` : money.format(Math.abs(tx.amount))}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
             );
