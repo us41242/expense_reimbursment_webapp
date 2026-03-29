@@ -52,8 +52,8 @@ export default function NewTripPage() {
       finalEndDate = endDate;
       const s = new Date(startDate + "T12:00:00");
       const en = new Date(endDate + "T12:00:00");
-      const diffTime = Math.abs(en.getTime() - s.getTime());
-      totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffInMs = Math.abs(en.getTime() - s.getTime());
+      totalDays = (diffInMs / (1000 * 60 * 60 * 24)) + 1;
     }
 
     const payload = {
