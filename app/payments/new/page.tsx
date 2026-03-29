@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useTransactions } from "@/context/TransactionContext";
 
 export default function NewPaymentPage() {
   const router = useRouter();
+  const { refresh } = useTransactions();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +64,7 @@ export default function NewPaymentPage() {
       return;
     }
 
+    await refresh();
     router.push("/dashboard");
     router.refresh();
   };
