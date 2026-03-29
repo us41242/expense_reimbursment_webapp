@@ -17,6 +17,7 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
 });
 
 function getCardIcon(name: string | null) {
+  if (!name) return '/cards/Wire Transfer Icon.png';
   const n = name?.toLowerCase() || '';
   if (n.includes('costco') || n.includes('citi')) return '/cards/Citi Costco Icon.png';
   if (n.includes('debit') || n.includes('bus complete chk') || n.includes('chk')) return '/cards/Chase Business Debit Icon.png';

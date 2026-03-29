@@ -37,7 +37,9 @@ function TransactionCard({ tx }: { tx: Transaction }) {
       tx.merchant.toLowerCase().includes("direct deposit") ||
       tx.merchant.toLowerCase().includes("transfer");
 
-    if (isWireTransfer) {
+    const isManualEntry = !tx.paymentMethodName;
+
+    if (isWireTransfer || isManualEntry) {
       return '/cards/Wire Transfer Icon.png';
     }
 
