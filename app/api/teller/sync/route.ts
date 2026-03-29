@@ -83,28 +83,50 @@ export async function GET() {
         console.log(`[Teller] ${conn.institution_name} / ${accountLabel}: ${transactions.length} transaction(s)`);
         if (!transactions.length) continue;
 
+        const tellerIds = transactions.map((t: any) => t.id);
+        const { data: existingTxs } = await supabase
+          .from('transactions')
+          .select('teller_transaction_id, category, notes, receiptImageUrl')
+          .in('teller_transaction_id', tellerIds);
+        
+        const existingMap = new Map(existingTxs?.map(t => [t.teller_transaction_id, t]) || []);
+
         const formattedData = transactions.map((t: any) => {
           const amount = parseFloat(t.amount);
-          
-          let category: string | null = 'personal'; // Default to personal
-          
+          const existing = existingMap.get(t.id);
           const pmName = (account.name || '').toLowerCase();
-          const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
-          const isCredit = isDepository ? amount > 0 : amount < 0;
+          
+          let category: string | null = existing?.category || 'personal'; // Preserve existing or default
+          
+          // Only auto-categorize if the transaction lacks a pre-existing category in our DB
+          if (!existing?.category) {
+            const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
+            const isCredit = isDepository ? amount > 0 : amount < 0;
 
-          // If it is an expense, check if it falls in the reimbursable dates
-          if (!isCredit) {
-            const ranges = [
-              { start: '2026-01-23', end: '2026-01-30' },
-              { start: '2026-02-12', end: '2026-02-20' },
-              { start: '2026-02-25', end: '2026-02-27' },
-              { start: '2026-02-28', end: '2026-03-16' },
-              { start: '2026-03-19', end: '2026-03-26' },
-            ];
-            
-            const isReimbursable = ranges.some(r => t.date >= r.start && t.date <= r.end);
-            if (isReimbursable) {
-              category = 'reimbursable';
+            const desc = t.description.toLowerCase();
+            const isTransfer = 
+              desc.includes('transfer') || 
+              desc.includes('payment to') || 
+              desc.includes('payment from') || 
+              desc.includes('payment thank you') ||
+              desc.includes('zelle') ||
+              desc.includes('credit card') ||
+              desc.startsWith('payout from');
+
+            // If it is an expense AND NOT a bank transfer, check if it falls in the reimbursable dates
+            if (!isCredit && !isTransfer) {
+              const ranges = [
+                { start: '2026-01-23', end: '2026-01-30' },
+                { start: '2026-02-12', end: '2026-02-20' },
+                { start: '2026-02-25', end: '2026-02-27' },
+                { start: '2026-02-28', end: '2026-03-16' },
+                { start: '2026-03-19', end: '2026-03-26' },
+              ];
+              
+              const isReimbursable = ranges.some(r => t.date >= r.start && t.date <= r.end);
+              if (isReimbursable) {
+                category = 'reimbursable';
+              }
             }
           }
 
@@ -119,10 +141,12 @@ export async function GET() {
             category,
             iso_currency_code: 'USD',
             payment_method_id: paymentMethodId,
+            notes: existing?.notes ?? null,
+            receiptImageUrl: existing?.receiptImageUrl ?? null,
           };
         });
 
-        // UPSERT — inserts new rows, skips duplicates by teller_transaction_id
+        // UPSERT — inserts new rows, overwrites with same values to preserve existing metadata
         const { error: upsertError } = await supabase
           .from('transactions')
           .upsert(formattedData, { onConflict: 'teller_transaction_id' });
