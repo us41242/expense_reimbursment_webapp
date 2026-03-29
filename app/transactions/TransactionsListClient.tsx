@@ -5,7 +5,7 @@ import type { ExpenseCategory } from "@/lib/types";
 import Link from "next/link";
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, ArrowDown, ArrowUp } from "lucide-react";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -33,7 +33,7 @@ function TransactionsListContent() {
   const searchParams = useSearchParams();
 
   const [filter, setFilter] = useState<"all" | "uncategorized" | "categorized" | "reimbursable" | "personal">("all");
-  const [sort, setSort] = useState<"newest" | "oldest">("newest");
+  const [sort, setSort] = useState<"newest" | "oldest" | "largest" | "smallest">("newest");
 
   // Read initial params
   useEffect(() => {
@@ -51,6 +51,8 @@ function TransactionsListContent() {
       return true;
     })
     .sort((a, b) => {
+      if (sort === "largest") return Math.abs(b.amount) - Math.abs(a.amount);
+      if (sort === "smallest") return Math.abs(a.amount) - Math.abs(b.amount);
       const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
       return sort === "newest" ? diff : -diff;
     });
@@ -94,25 +96,38 @@ function TransactionsListContent() {
           ))}
         </div>
         
-        <div className="flex justify-start pb-2">
+        <div className="flex flex-wrap justify-start gap-2 pb-2">
           <button
             onClick={() => setSort(s => s === "newest" ? "oldest" : "newest")}
-            className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors border ${
+              sort === "newest" || sort === "oldest" 
+                ? "bg-zinc-100 border-zinc-300 text-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100" 
+                : "bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-950/40 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            }`}
           >
             {sort === "newest" ? (
-              <>
-                <span>Newest First</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </>
+              <><span>Newest First</span> <ArrowDown className="h-3.5 w-3.5" /></>
+            ) : sort === "oldest" ? (
+              <><span>Oldest First</span> <ArrowUp className="h-3.5 w-3.5" /></>
             ) : (
-              <>
-                <span>Oldest First</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                </svg>
-              </>
+              <span>Sort by Date</span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setSort(s => s === "largest" ? "smallest" : "largest")}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors border ${
+              sort === "largest" || sort === "smallest" 
+                ? "bg-zinc-100 border-zinc-300 text-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100" 
+                : "bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-950/40 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            }`}
+          >
+            {sort === "largest" ? (
+              <><span>Largest First</span> <ArrowDown className="h-3.5 w-3.5" /></>
+            ) : sort === "smallest" ? (
+              <><span>Smallest First</span> <ArrowUp className="h-3.5 w-3.5" /></>
+            ) : (
+              <span>Sort by Amount</span>
             )}
           </button>
         </div>
