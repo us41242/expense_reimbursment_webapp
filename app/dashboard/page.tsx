@@ -26,6 +26,13 @@ export default function DashboardPage() {
             <Plus className="h-4 w-4" />
             Enter Transaction
           </Link>
+          <Link 
+            href="/payments/new"
+            className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4" />
+            Log Payment
+          </Link>
           <SyncButton />
         </div>
         <h1 className="text-xl font-bold w-full md:w-auto text-right md:text-left text-zinc-500 uppercase tracking-wider text-sm">Expense Dashboard</h1>

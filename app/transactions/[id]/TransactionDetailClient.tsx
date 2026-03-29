@@ -76,6 +76,27 @@ export function TransactionDetailClient({ id }: Props) {
     if (err) setError(err);
   }, [id, removeReceiptImage]);
 
+  const handleDelete = useCallback(async () => {
+    if (!window.confirm("Are you sure you want to delete this transaction completely? This cannot be undone.")) return;
+    setUploading(true);
+    const supabase = createClient();
+    if (!supabase) return;
+    
+    // First, delete any splits to prevent orphan records
+    await supabase.from("transactions").delete().eq("parent_uid", id);
+    
+    // Call delete the transaction
+    const { error: err } = await supabase.from("transactions").delete().eq("id", id);
+    if (err) {
+      setError(`Wait, failed to delete: ${err.message}`);
+      setUploading(false);
+    } else {
+      await refresh();
+      router.push("/dashboard");
+      router.refresh();
+    }
+  }, [id, router, refresh]);
+
   if (configMissing) {
     return (
       <p className="text-sm text-amber-800 dark:text-amber-200">
@@ -137,6 +158,15 @@ export function TransactionDetailClient({ id }: Props) {
         >
           Uncategorized
         </Link>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={uploading}
+          className="ml-auto flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors disabled:opacity-50"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </button>
       </div>
 
       <header>
