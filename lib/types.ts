@@ -11,6 +11,19 @@ export type PaymentMethod = {
   sortOrder: number;
 };
 
+export type Trip = {
+  id: string;
+  userId: string;
+  city: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string | null; // YYYY-MM-DD, null means ongoing
+  totalDays: number | null;
+  airline?: string | null;
+  flightNumber?: string | null;
+  flightReceiptUrl?: string | null;
+  createdAt: string;
+};
+
 export type Transaction = {
   id: string;
   amount: number;

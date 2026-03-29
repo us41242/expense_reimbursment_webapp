@@ -148,7 +148,7 @@ export default function NewTransactionPage() {
             >
               <option value="reimbursable">Reimbursable</option>
               <option value="personal">Personal</option>
-              <option value="non-reimbursable">Non-Reimbursable</option>
+              <option value="non-reimbursable">Tax Deductible</option>
               <option value="research needed">Research Needed</option>
             </select>
           </div>

@@ -200,7 +200,7 @@ function ReportRow({ tx }: { tx: Transaction }) {
 
   return (
     <div className="flex flex-col gap-3 border-b border-zinc-200 bg-white p-4 transition-colors last:border-0 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/20 dark:hover:bg-zinc-900/40 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 min-w-0 flex-1">
         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
           {(() => {
             const isWireTransfer = 
@@ -243,20 +243,20 @@ function ReportRow({ tx }: { tx: Transaction }) {
           })()}
         </div>
         
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0 flex-1">
           <Link
             href={`/transactions/${tx.id}`}
-            className="text-[15px] font-bold tracking-tight text-zinc-900 underline-offset-2 hover:underline dark:text-zinc-50"
+            className="text-[15px] font-bold tracking-tight text-zinc-900 underline-offset-2 hover:underline dark:text-zinc-50 truncate"
           >
             {tx.merchant}
           </Link>
-          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
             {dateFmt.format(d)}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800 sm:border-0 sm:pt-0">
+      <div className="flex shrink-0 items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800 sm:border-0 sm:pt-0">
         <span className="text-sm font-medium text-zinc-500 sm:hidden">Amount</span>
         {(() => {
           const pmName = (tx.paymentMethodName || '').toLowerCase();

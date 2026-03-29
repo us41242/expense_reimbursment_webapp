@@ -19,6 +19,9 @@ export async function GET() {
       return NextResponse.json({ message: "No bank connections found to sync." });
     }
 
+    const { data: allTrips } = await supabase.from('trips').select('user_id, start_date, end_date');
+    const trips = allTrips || [];
+
     let totalSynced = 0;
 
     console.log(`[Sync] Found ${connections.length} bank connection(s):`, connections.map(c => c.institution_name));
@@ -115,17 +118,16 @@ export async function GET() {
 
             // If it is an expense AND NOT a bank transfer, check if it falls in the reimbursable dates
             if (!isCredit && !isTransfer) {
-              const ranges = [
-                { start: '2026-01-23', end: '2026-01-30' },
-                { start: '2026-02-12', end: '2026-02-20' },
-                { start: '2026-02-25', end: '2026-02-27' },
-                { start: '2026-02-28', end: '2026-03-16' },
-                { start: '2026-03-19', end: '2026-03-26' },
-              ];
+              const userTrips = trips.filter((tr: any) => tr.user_id === conn.user_id);
               
-              const isReimbursable = ranges.some(r => t.date >= r.start && t.date <= r.end);
+              const isReimbursable = userTrips.some((r: any) => {
+                if (r.end_date) return t.date >= r.start_date && t.date <= r.end_date;
+                return t.date >= r.start_date; // Ongoing trip
+              });
               if (isReimbursable) {
                 category = 'reimbursable';
+              } else {
+                category = 'personal'; // Auto-categorize non-working days as personal
               }
             }
           }

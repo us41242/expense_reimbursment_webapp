@@ -162,7 +162,7 @@ function TransactionsListContent() {
                         <option value="">Uncategorized</option>
                         <option value="personal">Personal</option>
                         <option value="reimbursable">Reimbursable</option>
-                        <option value="non-reimbursable">Non-Reimbursable</option>
+                        <option value="non-reimbursable">Tax Deductible</option>
                         <option value="research-needed">Research Needed</option>
                       </select>
 
@@ -226,7 +226,7 @@ function TransactionsListContent() {
                         tx.category === 'research-needed' ? 'text-amber-600 dark:text-amber-500' :
                         'text-zinc-500 dark:text-zinc-400'
                       }`}>
-                        {tx.category.replace("-", " ")}
+                        {tx.category === 'non-reimbursable' ? 'Tax Deductible' : tx.category.replace("-", " ")}
                       </span>
                     )}
                   </div>

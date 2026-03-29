@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const CATEGORY_ACTIONS: { category: ExpenseCategory; label: string }[] = [
   { category: "reimbursable", label: "Reimbursable Expenses" },
-  { category: "non-reimbursable", label: "EPIC Business Expenses" },
+  { category: "non-reimbursable", label: "Tax Deductible Expenses" },
   { category: "personal", label: "Personal Expenses" },
   { category: "research-needed", label: "Research Needed" },
 ];

@@ -1,9 +1,10 @@
 "use client";
 
 import { useTransactions } from "@/context/TransactionContext";
-import type { Transaction } from "@/lib/types";
+import type { Transaction, Trip } from "@/lib/types";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -18,6 +19,17 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
 
 export function ExportReportClient() {
   const { transactions, hydrated, configMissing, signedIn } = useTransactions();
+  const [trips, setTrips] = useState<any[]>([]);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function load() {
+      if (!signedIn || !supabase) return;
+      const { data } = await supabase.from('trips').select('*').order('start_date', { ascending: true });
+      if (data) setTrips(data);
+    }
+    load();
+  }, [signedIn, supabase]);
 
   const rows = useMemo(
     () =>
@@ -31,12 +43,20 @@ export function ExportReportClient() {
     [transactions],
   );
 
-  const total = useMemo(
-    () => rows.reduce((s, t) => s + t.amount, 0),
-    [rows],
+  const rawAdvances = useMemo(
+    () => transactions.filter(t => t.notes?.includes("[Advance Payment]")),
+    [transactions]
   );
 
+  const totalDays = useMemo(() => trips.reduce((s: number, t: any) => s + (t.total_days || 0), 0), [trips]);
+  const laborTotal = totalDays * 200;
+  const reimbursableTotal = useMemo(() => rows.reduce((s: number, t: any) => s + Math.abs(t.amount), 0), [rows]);
+  const advanceTotal = useMemo(() => rawAdvances.reduce((s: number, t: any) => s + Math.abs(t.amount), 0), [rawAdvances]);
+  
+  const totalDue = laborTotal + reimbursableTotal - advanceTotal;
+
   const downloadCSV = () => {
+    // ... csv code preserved ...
     const header = "Date,Amount,Merchant,Category,Payment Method,Billed\n";
     const csvContent = rows
       .map((t) => {
@@ -113,17 +133,109 @@ export function ExportReportClient() {
         </div>
       </div>
 
-      <article className="print-report space-y-8 print:space-y-4 text-zinc-900 dark:text-zinc-50 print:text-black">
-        <header className="border-b border-zinc-200 pb-6 print:pb-2 dark:border-zinc-800 print:border-zinc-300">
-          <h1 className="uppercase text-2xl font-bold tracking-tight text-zinc-900 dark:text-white print:text-xl print:text-black">
-            REIMBURSEMENT EXPENSE REPORT
+      {/* COVER PAGE */}
+      <article className="print-report break-after-page space-y-8 print:space-y-6 text-zinc-900 dark:text-zinc-50 print:text-black">
+        <header className="border-b border-zinc-200 pb-6 print:pb-4 dark:border-zinc-800 print:border-zinc-300">
+          <h1 className="uppercase text-3xl font-bold tracking-tight text-zinc-900 dark:text-white print:text-2xl print:text-black">
+            LABOR & REIMBURSEMENT REPORT
           </h1>
-          <p className="mt-2 print:mt-1 text-sm text-zinc-600 dark:text-zinc-400 print:text-[10pt] print:text-zinc-800">
-            Unpaid Reimbursable Business Expenses | Report Generated {dateFmt.format(new Date())}
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400 print:text-[11pt] print:text-zinc-800">
+            Report Generated {dateFmt.format(new Date())}
           </p>
-          <p className="mt-4 print:mt-1 text-lg font-semibold tabular-nums text-zinc-900 dark:text-white print:text-[11pt] print:text-black">
-            Total {money.format(total)}
-          </p>
+        </header>
+
+        <div>
+          <h2 className="text-xl font-bold mb-4 border-b border-zinc-200 pb-2 dark:border-zinc-800 print:border-zinc-300">Days Worked</h2>
+          <table className="w-full text-left border-collapse text-sm print:text-[10pt]">
+            <thead>
+              <tr className="border-b-2 border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 print:bg-gray-100">
+                <th className="py-2 px-3 font-bold w-1/3">City</th>
+                <th className="py-2 px-3 font-bold w-1/4">Begin</th>
+                <th className="py-2 px-3 font-bold w-1/4">End</th>
+                <th className="py-2 px-3 font-bold text-right">Total Days</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trips.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-4 text-center text-zinc-500">No work days logged.</td>
+                </tr>
+              ) : (
+                trips.map(t => (
+                  <tr key={t.id} className="border-b border-zinc-200 dark:border-zinc-800">
+                    <td className="py-2 px-3 font-medium">{t.city} {t.end_date ? "" : "(Ongoing)"}</td>
+                    <td className="py-2 px-3">{dateFmt.format(new Date(t.start_date + "T12:00:00"))}</td>
+                    <td className="py-2 px-3">{t.end_date ? dateFmt.format(new Date(t.end_date + "T12:00:00")) : "TBD"}</td>
+                    <td className="py-2 px-3 text-right font-medium">{t.end_date ? `${t.total_days}d` : "TBD"}</td>
+                  </tr>
+                ))
+              )}
+              <tr className="bg-zinc-50 dark:bg-zinc-900 print:bg-gray-100 font-bold border-b border-zinc-300 dark:border-zinc-700">
+                <td colSpan={3} className="py-2 px-3">Total Days</td>
+                <td className="py-2 px-3 text-right">{totalDays}d</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold mb-4 border-b border-zinc-200 pb-2 dark:border-zinc-800 print:border-zinc-300">Payments Received</h2>
+          <table className="w-full text-left border-collapse text-sm print:text-[10pt]">
+            <thead>
+              <tr className="border-b-2 border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 print:bg-gray-100">
+                <th className="py-2 px-3 font-bold w-[120px]">Date</th>
+                <th className="py-2 px-3 font-bold">Description</th>
+                <th className="py-2 px-3 font-bold text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rawAdvances.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="py-4 text-center text-zinc-500">No advance payments recorded.</td>
+                </tr>
+              ) : (
+                rawAdvances.map(t => (
+                  <tr key={t.id} className="border-b border-zinc-200 dark:border-zinc-800">
+                    <td className="py-2 px-3 whitespace-nowrap">{dateFmt.format(new Date(t.date + "T12:00:00"))}</td>
+                    <td className="py-2 px-3">{t.merchant}</td>
+                    <td className="py-2 px-3 text-right font-medium">{money.format(Math.abs(t.amount))}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pt-4 max-w-sm ml-auto">
+          <table className="w-full text-sm print:text-[11pt]">
+            <tbody>
+              <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                <td className="py-2 font-medium">Total Labor ({totalDays}d @ $200/day)</td>
+                <td className="py-2 text-right font-mono">{money.format(laborTotal)}</td>
+              </tr>
+              <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                <td className="py-2 font-medium">Total Reimbursable Expenses</td>
+                <td className="py-2 text-right font-mono">{money.format(reimbursableTotal)}</td>
+              </tr>
+              <tr className="border-b-2 border-zinc-400 dark:border-zinc-600">
+                <td className="py-2 font-medium">Total Payments Received</td>
+                <td className="py-2 text-right font-mono text-red-600 print:text-red-800">-{money.format(advanceTotal)}</td>
+              </tr>
+              <tr className="text-lg font-bold">
+                <td className="py-4">Total Due</td>
+                <td className="py-4 text-right font-mono">{money.format(totalDue)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      {/* PAGE 2: ITEMIZED */}
+      <article className="print-report space-y-8 print:space-y-4 text-zinc-900 dark:text-zinc-50 print:text-black pt-8 print:pt-0">
+        <header className="border-b border-zinc-200 pb-6 print:pb-2 dark:border-zinc-800 print:border-zinc-300">
+          <h2 className="uppercase text-xl font-bold tracking-tight text-zinc-900 dark:text-white print:text-lg print:text-black">
+            Appendix A: ITEMIZED EXPENSES
+          </h2>
         </header>
 
         {rows.length === 0 ? (
@@ -132,8 +244,8 @@ export function ExportReportClient() {
           </p>
         ) : (
           <>
-            <div className="font-sans text-[12pt] leading-tight print:text-[10pt] print:leading-none print:text-black">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto font-sans text-[12pt] leading-tight print:text-[10pt] print:leading-none print:text-black">
+              <table className="w-full min-w-[600px] text-left border-collapse print:min-w-0">
                 <thead>
                   <tr className="border-b-2 border-zinc-300 dark:border-zinc-700">
                     <th className="py-2.5 print:py-1 pr-4 font-bold whitespace-nowrap">Date</th>
@@ -151,14 +263,7 @@ export function ExportReportClient() {
                     if (splitMatch) {
                       paymentMethodStr = `Payment ${splitMatch[1]}`;
                     } else if (tx.notes?.includes("[Advance Payment]")) {
-                      const sameDayAdvances = transactions
-                        .filter((t) => t.notes?.includes("[Advance Payment]") && t.date === tx.date)
-                        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-                      let idx = sameDayAdvances.findIndex((t) => t.id === tx.id);
-                      if (idx === -1) idx = sameDayAdvances.length;
-                      const [,,dd] = tx.date.split("-");
-                      const mm = tx.date.split("-")[1];
-                      paymentMethodStr = `Advance Payment ${idx + 1}${mm}${dd}`;
+                      paymentMethodStr = "Advance Payment";
                     }
 
                     return (
