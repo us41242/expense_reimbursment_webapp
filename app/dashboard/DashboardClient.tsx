@@ -47,7 +47,9 @@ export function DashboardClient({ userId }: DashboardClientProps) {
 
     for (const t of transactions) {
       if (t.category === "reimbursable") {
-        if (!t.reimbursementBilled && !t.reimbursementPaid) {
+        if (t.notes?.includes("[Advance Payment]")) {
+          advances += Math.abs(t.amount);
+        } else if (!t.reimbursementBilled && !t.reimbursementPaid) {
           unbilled += t.amount;
         } else if (t.reimbursementBilled && !t.reimbursementPaid) {
           billedUnpaid += t.amount;

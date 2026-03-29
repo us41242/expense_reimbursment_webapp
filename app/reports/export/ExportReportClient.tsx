@@ -37,7 +37,8 @@ export function ExportReportClient() {
         .filter(
           (t) =>
             t.category === "reimbursable" &&
-            !t.reimbursementPaid,
+            !t.reimbursementPaid &&
+            !t.notes?.includes("[Advance Payment]"),
         )
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],

@@ -41,7 +41,7 @@ export function ReportsClient() {
   const unbilledTxs = useMemo(
     () =>
       transactions
-        .filter((t) => t.category === "reimbursable" && !t.reimbursementBilled && !t.reimbursementPaid)
+        .filter((t) => t.category === "reimbursable" && !t.notes?.includes("[Advance Payment]") && !t.reimbursementBilled && !t.reimbursementPaid)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
@@ -49,7 +49,7 @@ export function ReportsClient() {
   const billedTxs = useMemo(
     () =>
       transactions
-        .filter((t) => t.category === "reimbursable" && t.reimbursementBilled && !t.reimbursementPaid)
+        .filter((t) => t.category === "reimbursable" && !t.notes?.includes("[Advance Payment]") && t.reimbursementBilled && !t.reimbursementPaid)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
@@ -57,7 +57,7 @@ export function ReportsClient() {
   const paidTxs = useMemo(
     () =>
       transactions
-        .filter((t) => t.category === "reimbursable" && t.reimbursementPaid)
+        .filter((t) => t.category === "reimbursable" && !t.notes?.includes("[Advance Payment]") && t.reimbursementPaid)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions],
   );
