@@ -140,6 +140,10 @@ export function TransactionDetailClient({ id }: Props) {
   }
 
   const d = new Date(tx.date + "T12:00:00");
+  const pmName = (tx.paymentMethodName || '').toLowerCase();
+  const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
+  const isAdvance = !!tx.notes?.includes("[Advance Payment]");
+  const isCredit = isAdvance ? true : (isDepository ? tx.amount > 0 : tx.amount < 0);
   const reimbursable = tx.category === "reimbursable";
 
   return (
@@ -173,8 +177,8 @@ export function TransactionDetailClient({ id }: Props) {
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           {tx.merchant}
         </h1>
-        <p className="mt-1 text-3xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-          {money.format(tx.amount)}
+        <p className={`mt-1 text-3xl font-semibold tabular-nums tracking-tight ${isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
+          {isCredit ? `(Credit) ${money.format(Math.abs(tx.amount))}` : money.format(Math.abs(tx.amount))}
         </p>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           {dateFmt.format(d)}

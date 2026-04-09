@@ -252,7 +252,8 @@ function TransactionsListContent() {
                   {(() => {
                     const pmName = (tx.paymentMethodName || '').toLowerCase();
                     const isDepository = pmName.includes('chk') || pmName.includes('debit') || pmName.includes('sav');
-                    const isCredit = isDepository ? tx.amount > 0 : tx.amount < 0;
+                    const isAdvance = tx.notes?.includes("[Advance Payment]");
+                    const isCredit = isAdvance ? true : (isDepository ? tx.amount > 0 : tx.amount < 0);
                     
                     return (
                       <span className={`text-base sm:text-lg font-bold tabular-nums tracking-tight ${isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
